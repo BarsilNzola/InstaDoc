@@ -24,12 +24,12 @@ pragma solidity ^0.8.19;
  		Consent memory c = Consent({
  			patient: msg.sender,
  			doctor: doctor,
- 			encryptedCID: enccryptedCID,
+ 			encryptedCID: encryptedCID,
  			timestamp: block.timestamp,
  			active: true
  		});
 
- 		consent.push(c);
+ 		consents.push(c);
  		uint256 id = consents.length - 1;
  		consentExists[id] = true;
 
@@ -40,7 +40,7 @@ pragma solidity ^0.8.19;
  	function revokeConsent(uint256 id) external {
  		require(consentExists[id], "Consent does not exist");
  		Consent storage c = consents[id];
- 		require(msg;sender == c.patient, "Only patient can revoke");
+ 		require(msg.sender == c.patient, "Only patient can revoke");
  		c.active = false;
  		emit ConsentRevoked(id);
  	}
@@ -49,4 +49,8 @@ pragma solidity ^0.8.19;
  		require(consentExists[id], "Consent does not exist");
  		return consents[id];
  	}
- } 
+
+ 	function consentsLength() external view returns (uint256) {
+ 		return consents.length;
+ 	}
+} 

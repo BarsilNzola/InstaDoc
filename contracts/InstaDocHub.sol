@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "./DoctorRegistry.sol";
 import "./ConsentRegistry.sol";
 import "./EscrowPayments.sol";
-import ",/PatientRecords.sol";
+import "./PatientRecords.sol";
 
 /**
  * @title InstaDocHub
@@ -29,7 +29,7 @@ contract InstaDocHub {
 		doctorRegistry = DoctorRegistry(doctorRegistryAddr);
 		consentRegistry = ConsentRegistry(consentRegistryAddr);
 		escrow = EscrowPayments(escrowAddr);
-		patientsRecords = PatientRecords(patientRecordsAddr);
+		patientRecords = PatientRecords(patientRecordsAddr);
 	}
 
 	/// @notice Patient self-registration
@@ -55,13 +55,12 @@ contract InstaDocHub {
 
 		// verify consent exists and active
 		bool hasConsent = false;
-		uint256 totalConsents = patientRecords.getConsentCount(); //need consentRegistry check
 		for (uint256 i = 0; i < consentRegistry.consentsLength(); i++) {
-			ConsentRegistry.Consent memory c = consentRegistry.getConsent(i);
-			if (c.patient == patient && c.doctor == msg.sender && c.active) {
-				hasConsent = true;
-				break;
-			}
+		    ConsentRegistry.Consent memory c = consentRegistry.getConsent(i);
+		    if (c.patient == patient && c.doctor == msg.sender && c.active) {
+		        hasConsent = true;
+		        break;
+		    }
 		}
 		require(hasConsent, "No Active Consent");
 

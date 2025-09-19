@@ -45,7 +45,7 @@ contract EscrowPayments {
 		});
 
 		emit AppointmentBooked(nextAppointmentId, msg.sender, doctor, msg.value);
-		return nextAppointment++;
+		return nextAppointmentId++;
 	}
 
 	function completeAppointment(uint256 appointmentId) external {
@@ -66,7 +66,7 @@ contract EscrowPayments {
 		require(appt.status == AppointmentStatus.Pending, "Invalid status");
 
 		appt.status = AppointmentStatus.Cancelled;
-		payable(appt.patient).transfer(appt.ammount);
+		payable(appt.patient).transfer(appt.amount);
 
 		emit AppointmentCancelled(appointmentId);
 		emit FundsReleased(appointmentId, appt.patient, appt.amount);
@@ -86,7 +86,7 @@ contract EscrowPayments {
 		require(appt.status == AppointmentStatus.Disputed, "Not disputed");
 
 		appt.status = AppointmentStatus.Completed;
-		winnder.transfer(appt.amount);
+		winner.transfer(appt.amount);
 
 		emit FundsReleased(appointmentId, winner, appt.amount);
 	}

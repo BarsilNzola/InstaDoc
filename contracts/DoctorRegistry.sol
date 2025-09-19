@@ -8,7 +8,7 @@ pragma solidity ^0.8.19;
 contract DoctorRegistry {
 	address public admin;
 
-	Struct Doctor {
+	struct Doctor {
 		string name;
 		string specialization;
 		string profileCID; //IPFS CID to off-chain profile
