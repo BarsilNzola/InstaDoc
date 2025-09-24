@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
-import Web3Modal from "web3modal";
+import { connectWallet } from "./wallet";
 
 export default function ConnectWallet({ onConnect }: { onConnect: (address: string) => void}) {
 	const [address, setAddress] = useState("");
 
-	const ConnectWallet = async () => {
-		const Web3Modal = new Web3Modal();
-		const connection = await Web3Modal.connect();
-		const provider = new.ethers.BrowserProvider(connection);
-		const signer = await provider.getSigner();
-		const addr = await signer.getAddress();
-		setAddress(addr);
-		onConnect(addr);
+	const handleConnect = async () => {
+		try {
+			const { address } = await connectWallet();
+			setAddress(address);
+			onConnect(address);
+		} catch (err) {
+			console.error("Wallet connection failed:", err);
+		}
 	};
 
 	return (

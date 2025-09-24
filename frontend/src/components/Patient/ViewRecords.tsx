@@ -7,7 +7,7 @@ export default function ViewRecords() {
 	useEffect(() => {
 		const fetchRecords = async () => {
 			try {
-				constant contract = await getPatientRecordsContract();
+				const contract = await getPatientRecordsContract();
 				const patientAddr = (window as any).ethereum.selectedAddress;
 				const data = await contract.getRecords(patientAddr);
 				setRecords(data);

@@ -1,5 +1,5 @@
 import PatientSignup from "./PatientSignup";
-import UploadRecord from "./UploadRecord";
+import ViewRecords from "./ViewRecords";
 import BookAppointment from "./BookAppointment";
 
 export default function PatientDashboard() {

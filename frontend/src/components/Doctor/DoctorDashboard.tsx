@@ -1,5 +1,6 @@
 import AcceptAppointment from "./AcceptAppointment";
 import MarkConsultationDone from "./MarkConsultationDone";
+import UploadRecord from "./UploadRecord";
 
 export default function DoctorDashboard() {
 	return (

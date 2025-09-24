@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import PatientDashboard from "./components/Patient/PatientDashboard";
 import DoctorDashboard from "./components/Doctor/DoctorDashboard";
-import { ConnectWallet } from "./components/Shared/ConnectWallet";
+import ConnectWallet from "./components/Shared/ConnectWallet";
 import './App.css'
 
 function App() {
