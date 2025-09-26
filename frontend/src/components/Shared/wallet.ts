@@ -1,40 +1,40 @@
-import { ethers } from "ethers";
-import EthereumProvider from "@walletconnect/ethereum-provider";
+import { http, createConfig } from "wagmi";
+import { metaMask, walletConnect, injected } from "wagmi/connectors";
+import { QueryClient } from "@tanstack/react-query";
 
-// Keep a reference to the WalletConnect provider
-let wcProvider: EthereumProvider | null = null;
+// --- U2U chain definition ---
+export const u2uChain = {
+  id: 2484,
+  name: "U2U Testnet",
+  nativeCurrency: { name: "U2U", symbol: "U2U", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-testnet.u2u.xyz"] },
+  },
+};
 
-export async function initWallet() {
-  if (!wcProvider) {
-    wcProvider = await EthereumProvider.init({
-      projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID!,
-      chains: [2484], // U2U testnet chain ID
-      optionalChains: [],
-      rpcMap: {
-        2484: "https://rpc-testnet.u2u.xyz",
-      },
+// --- WalletConnect project ID ---
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+if (!projectId) {
+  throw new Error("VITE_WALLETCONNECT_PROJECT_ID is missing in .env");
+}
+
+console.log("WalletConnect projectId:", import.meta.env.VITE_WALLETCONNECT_PROJECT_ID);
+
+// --- Wagmi config ---
+export const config = createConfig({
+  chains: [u2uChain],
+  transports: {
+    [u2uChain.id]: http("https://rpc-testnet.u2u.xyz"),
+  },
+  connectors: [
+    injected(),
+    metaMask(),
+    walletConnect({
+      projectId,
       showQrModal: true,
-    });
+    }),
+  ],
+});
 
-    // Handle disconnects
-    wcProvider.on("disconnect", () => {
-      wcProvider = null;
-    });
-  }
-
-  return wcProvider;
-}
-
-export async function connectWallet() {
-  const provider = await initWallet();
-  if (!provider) throw new Error("WalletConnect not initialized");
-
-  // Request connection
-  await provider.connect();
-
-  // Wrap in ethers.js
-  const ethersProvider = new ethers.BrowserProvider(provider as any);
-  const signer = await ethersProvider.getSigner();
-
-  return { provider: ethersProvider, signer };
-}
+// --- React Query client ---
+export const queryClient = new QueryClient();

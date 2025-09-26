@@ -1,22 +1,38 @@
-import { useEffect, useState } from "react";
-import { connectWallet } from "./wallet";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 
-export default function ConnectWallet({ onConnect }: { onConnect: (address: string) => void}) {
-	const [address, setAddress] = useState("");
+export default function ConnectWallet() {
+  const { connectors, connect, isPending } = useConnect();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
-	const handleConnect = async () => {
-		try {
-			const { address } = await connectWallet();
-			setAddress(address);
-			onConnect(address);
-		} catch (err) {
-			console.error("Wallet connection failed:", err);
-		}
-	};
+  if (isConnected && address) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm">
+          {address.slice(0, 6)}...{address.slice(-4)}
+        </span>
+        <button
+          onClick={() => disconnect()}
+          className="bg-red-500 text-white px-3 py-1 rounded"
+        >
+          Disconnect
+        </button>
+      </div>
+    );
+  }
 
-	return (
-		<button onClick={ConnectWallet} className="bg-indigo-600 text-white px-4 py-2 rounded">
-			{address ? `Connected: ${address.slice(0, 6)}...` : "Connect Wallet"}
-		</button>
-	);
+  return (
+    <div className="flex gap-2">
+      {connectors.map((c) => (
+        <button
+          key={c.id}
+          onClick={() => connect({ connector: c })}
+          disabled={isPending}
+          className="bg-indigo-600 text-white px-3 py-1 rounded disabled:opacity-50"
+        >
+          {c.name}
+        </button>
+      ))}
+    </div>
+  );
 }
