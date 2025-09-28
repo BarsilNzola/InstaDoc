@@ -29,18 +29,21 @@ export declare namespace PatientRecords {
     description: string;
     ipfsHash: string;
     timestamp: BigNumberish;
+    encrypted: boolean;
   };
 
   export type RecordStructOutput = [
     doctor: string,
     description: string,
     ipfsHash: string,
-    timestamp: bigint
+    timestamp: bigint,
+    encrypted: boolean
   ] & {
     doctor: string;
     description: string;
     ipfsHash: string;
     timestamp: bigint;
+    encrypted: boolean;
   };
 }
 
@@ -51,7 +54,7 @@ export interface PatientRecordsInterface extends Interface {
 
   encodeFunctionData(
     functionFragment: "addRecord",
-    values: [AddressLike, string, string]
+    values: [AddressLike, AddressLike, string, string, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "getRecords",
@@ -68,14 +71,16 @@ export namespace RecordAddedEvent {
     doctor: AddressLike,
     description: string,
     ipfsHash: string,
-    timestamp: BigNumberish
+    timestamp: BigNumberish,
+    encrypted: boolean
   ];
   export type OutputTuple = [
     patient: string,
     doctor: string,
     description: string,
     ipfsHash: string,
-    timestamp: bigint
+    timestamp: bigint,
+    encrypted: boolean
   ];
   export interface OutputObject {
     patient: string;
@@ -83,6 +88,7 @@ export namespace RecordAddedEvent {
     description: string;
     ipfsHash: string;
     timestamp: bigint;
+    encrypted: boolean;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -134,7 +140,13 @@ export interface PatientRecords extends BaseContract {
   ): Promise<this>;
 
   addRecord: TypedContractMethod<
-    [patient: AddressLike, description: string, ipfsHash: string],
+    [
+      patient: AddressLike,
+      doctor: AddressLike,
+      description: string,
+      ipfsHash: string,
+      encrypted: boolean
+    ],
     [void],
     "nonpayable"
   >;
@@ -152,7 +164,13 @@ export interface PatientRecords extends BaseContract {
   getFunction(
     nameOrSignature: "addRecord"
   ): TypedContractMethod<
-    [patient: AddressLike, description: string, ipfsHash: string],
+    [
+      patient: AddressLike,
+      doctor: AddressLike,
+      description: string,
+      ipfsHash: string,
+      encrypted: boolean
+    ],
     [void],
     "nonpayable"
   >;
@@ -173,7 +191,7 @@ export interface PatientRecords extends BaseContract {
   >;
 
   filters: {
-    "RecordAdded(address,address,string,string,uint256)": TypedContractEvent<
+    "RecordAdded(address,address,string,string,uint256,bool)": TypedContractEvent<
       RecordAddedEvent.InputTuple,
       RecordAddedEvent.OutputTuple,
       RecordAddedEvent.OutputObject

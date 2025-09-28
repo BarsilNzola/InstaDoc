@@ -4,9 +4,10 @@
   "description": "InstaDoc Hackathon Project",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile",
+    "clean": "powershell -Command \"if (Test-Path artifacts) { Remove-Item artifacts -Recurse -Force }; if (Test-Path cache) { Remove-Item cache -Recurse -Force }\"",
+    "compile": "hardhat compile --tsconfig tsconfig.hardhat.json",
     "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.ts --network u2uTestnet"
+    "deploy": "hardhat run scripts/deploy.js --network u2uTestnet"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "@types/chai": "^5.2.2",
     "@types/mocha": "^10.0.10",
     "chai": "^4.3.10",
+    "cross-env": "^10.0.0",
     "dotenv": "^16.4.5",
     "hardhat": "^2.26.3",
     "hardhat-gas-reporter": "^1.0.10",

@@ -38,12 +38,13 @@ pragma solidity ^0.8.19;
  	}
 
  	function revokeConsent(uint256 id) external {
- 		require(consentExists[id], "Consent does not exist");
- 		Consent storage c = consents[id];
- 		require(msg.sender == c.patient, "Only patient can revoke");
- 		c.active = false;
- 		emit ConsentRevoked(id);
- 	}
+		require(consentExists[id], "Consent does not exist");
+		Consent storage c = consents[id];
+		require(msg.sender == c.patient, "Only patient can revoke");
+		require(c.active, "Consent already revoked");
+		c.active = false;
+		emit ConsentRevoked(id);
+	}
 
  	function getConsent(uint256 id) external view returns (Consent memory) {
  		require(consentExists[id], "Consent does not exist");

@@ -29,18 +29,21 @@ export declare namespace PatientRecords {
     description: string;
     ipfsHash: string;
     timestamp: BigNumberish;
+    encrypted: boolean;
   };
 
   export type RecordStructOutput = [
     doctor: string,
     description: string,
     ipfsHash: string,
-    timestamp: bigint
+    timestamp: bigint,
+    encrypted: boolean
   ] & {
     doctor: string;
     description: string;
     ipfsHash: string;
     timestamp: bigint;
+    encrypted: boolean;
   };
 }
 
@@ -48,6 +51,7 @@ export interface InstaDocHubInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "addRecordForPatient"
+      | "approveDoctor"
       | "consentRegistry"
       | "doctorRegistry"
       | "escrow"
@@ -55,14 +59,24 @@ export interface InstaDocHubInterface extends Interface {
       | "patientRecords"
       | "registerPatient"
       | "registeredPatients"
+      | "revokeDoctor"
       | "viewMyRecords"
   ): FunctionFragment;
 
-  getEvent(nameOrSignatureOrTopic: "PatientRegistered"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic:
+      | "DoctorApproved"
+      | "DoctorRevoked"
+      | "PatientRegistered"
+  ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "addRecordForPatient",
-    values: [AddressLike, string, string]
+    values: [AddressLike, string, string, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "approveDoctor",
+    values: [AddressLike, string, string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "consentRegistry",
@@ -90,12 +104,20 @@ export interface InstaDocHubInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "revokeDoctor",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "viewMyRecords",
     values?: undefined
   ): string;
 
   decodeFunctionResult(
     functionFragment: "addRecordForPatient",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "approveDoctor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -124,9 +146,37 @@ export interface InstaDocHubInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "revokeDoctor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "viewMyRecords",
     data: BytesLike
   ): Result;
+}
+
+export namespace DoctorApprovedEvent {
+  export type InputTuple = [doctor: AddressLike];
+  export type OutputTuple = [doctor: string];
+  export interface OutputObject {
+    doctor: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace DoctorRevokedEvent {
+  export type InputTuple = [doctor: AddressLike];
+  export type OutputTuple = [doctor: string];
+  export interface OutputObject {
+    doctor: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace PatientRegisteredEvent {
@@ -185,7 +235,23 @@ export interface InstaDocHub extends BaseContract {
   ): Promise<this>;
 
   addRecordForPatient: TypedContractMethod<
-    [patient: AddressLike, description: string, recordCID: string],
+    [
+      patient: AddressLike,
+      description: string,
+      recordCID: string,
+      encrypted: boolean
+    ],
+    [void],
+    "nonpayable"
+  >;
+
+  approveDoctor: TypedContractMethod<
+    [
+      doctorAddr: AddressLike,
+      name: string,
+      specialization: string,
+      profileCID: string
+    ],
     [void],
     "nonpayable"
   >;
@@ -212,6 +278,12 @@ export interface InstaDocHub extends BaseContract {
     "view"
   >;
 
+  revokeDoctor: TypedContractMethod<
+    [doctorAddr: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   viewMyRecords: TypedContractMethod<
     [],
     [PatientRecords.RecordStructOutput[]],
@@ -225,7 +297,24 @@ export interface InstaDocHub extends BaseContract {
   getFunction(
     nameOrSignature: "addRecordForPatient"
   ): TypedContractMethod<
-    [patient: AddressLike, description: string, recordCID: string],
+    [
+      patient: AddressLike,
+      description: string,
+      recordCID: string,
+      encrypted: boolean
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "approveDoctor"
+  ): TypedContractMethod<
+    [
+      doctorAddr: AddressLike,
+      name: string,
+      specialization: string,
+      profileCID: string
+    ],
     [void],
     "nonpayable"
   >;
@@ -251,9 +340,26 @@ export interface InstaDocHub extends BaseContract {
     nameOrSignature: "registeredPatients"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
+    nameOrSignature: "revokeDoctor"
+  ): TypedContractMethod<[doctorAddr: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "viewMyRecords"
   ): TypedContractMethod<[], [PatientRecords.RecordStructOutput[]], "view">;
 
+  getEvent(
+    key: "DoctorApproved"
+  ): TypedContractEvent<
+    DoctorApprovedEvent.InputTuple,
+    DoctorApprovedEvent.OutputTuple,
+    DoctorApprovedEvent.OutputObject
+  >;
+  getEvent(
+    key: "DoctorRevoked"
+  ): TypedContractEvent<
+    DoctorRevokedEvent.InputTuple,
+    DoctorRevokedEvent.OutputTuple,
+    DoctorRevokedEvent.OutputObject
+  >;
   getEvent(
     key: "PatientRegistered"
   ): TypedContractEvent<
@@ -263,6 +369,28 @@ export interface InstaDocHub extends BaseContract {
   >;
 
   filters: {
+    "DoctorApproved(address)": TypedContractEvent<
+      DoctorApprovedEvent.InputTuple,
+      DoctorApprovedEvent.OutputTuple,
+      DoctorApprovedEvent.OutputObject
+    >;
+    DoctorApproved: TypedContractEvent<
+      DoctorApprovedEvent.InputTuple,
+      DoctorApprovedEvent.OutputTuple,
+      DoctorApprovedEvent.OutputObject
+    >;
+
+    "DoctorRevoked(address)": TypedContractEvent<
+      DoctorRevokedEvent.InputTuple,
+      DoctorRevokedEvent.OutputTuple,
+      DoctorRevokedEvent.OutputObject
+    >;
+    DoctorRevoked: TypedContractEvent<
+      DoctorRevokedEvent.InputTuple,
+      DoctorRevokedEvent.OutputTuple,
+      DoctorRevokedEvent.OutputObject
+    >;
+
     "PatientRegistered(address)": TypedContractEvent<
       PatientRegisteredEvent.InputTuple,
       PatientRegisteredEvent.OutputTuple,

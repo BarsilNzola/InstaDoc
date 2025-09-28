@@ -1,9 +1,21 @@
+import { useEffect } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 
-export default function ConnectWallet() {
+interface ConnectWalletProps {
+  onConnect: (address: string) => void;
+}
+
+export default function ConnectWallet({ onConnect }: ConnectWalletProps) {
   const { connectors, connect, isPending } = useConnect();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+
+  // Notify parent when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      onConnect(address);
+    }
+  }, [isConnected, address]);
 
   if (isConnected && address) {
     return (

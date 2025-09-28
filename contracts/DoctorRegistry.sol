@@ -35,6 +35,7 @@ contract DoctorRegistry {
 		string calldata specialization,
 		string calldata profileCID
 	) external onlyAdmin {
+		require(!doctors[doctorAddr].verified, "Doctor already registered");
 		doctors[doctorAddr] = Doctor(name, specialization, profileCID, true);
 		emit DoctorRegistered(doctorAddr, name, specialization, profileCID);
 	}
@@ -47,4 +48,8 @@ contract DoctorRegistry {
 	function isVerified(address doctorAddr) external view returns (bool) {
 		return doctors[doctorAddr].verified;
 	}
+
+	function transferAdmin(address newAdmin) external onlyAdmin {
+        admin = newAdmin;
+    }
 }

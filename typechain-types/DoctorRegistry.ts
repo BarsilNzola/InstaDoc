@@ -30,6 +30,7 @@ export interface DoctorRegistryInterface extends Interface {
       | "isVerified"
       | "registerDoctor"
       | "revokeDoctor"
+      | "transferAdmin"
   ): FunctionFragment;
 
   getEvent(
@@ -53,6 +54,10 @@ export interface DoctorRegistryInterface extends Interface {
     functionFragment: "revokeDoctor",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "transferAdmin",
+    values: [AddressLike]
+  ): string;
 
   decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "doctors", data: BytesLike): Result;
@@ -63,6 +68,10 @@ export interface DoctorRegistryInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "revokeDoctor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferAdmin",
     data: BytesLike
   ): Result;
 }
@@ -181,6 +190,12 @@ export interface DoctorRegistry extends BaseContract {
     "nonpayable"
   >;
 
+  transferAdmin: TypedContractMethod<
+    [newAdmin: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -220,6 +235,9 @@ export interface DoctorRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "revokeDoctor"
   ): TypedContractMethod<[doctorAddr: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "transferAdmin"
+  ): TypedContractMethod<[newAdmin: AddressLike], [void], "nonpayable">;
 
   getEvent(
     key: "DoctorRegistered"

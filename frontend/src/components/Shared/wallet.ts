@@ -8,7 +8,7 @@ export const u2uChain = {
   name: "U2U Testnet",
   nativeCurrency: { name: "U2U", symbol: "U2U", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://rpc-testnet.u2u.xyz"] },
+    default: { http: ["https://rpc-nebulas-testnet.u2u.xyz"] },
   },
 };
 
