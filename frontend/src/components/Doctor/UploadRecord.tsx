@@ -1,13 +1,22 @@
 import { useState } from "react";
 import { uploadEncryptedFile, uploadFile } from "../../lib/ipfs";
 import { getPatientRecordsContract } from "../../lib/contracts";
+import { useAccount } from "wagmi";
 
-export default function UploadRecord() {
+interface UploadRecordProps {
+  patientAddress?: string;
+  onRecordUploaded?: () => void;
+}
+
+export default function UploadRecord({ patientAddress, onRecordUploaded }: UploadRecordProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [patientAddr, setPatientAddr] = useState("");
+  const [patientAddr, setPatientAddr] = useState(patientAddress || "");
+  const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
   const [encrypt, setEncrypt] = useState(true);
   const [secretKey, setSecretKey] = useState("");
+  const { address } = useAccount();
 
   const handleUpload = async () => {
     if (!file || !patientAddr) {
@@ -20,6 +29,14 @@ export default function UploadRecord() {
       return;
     }
 
+    if (!address) {
+      setStatus("⚠️ Please connect your wallet first.");
+      return;
+    }
+
+    setLoading(true);
+    setStatus("");
+
     try {
       let cid: string;
 
@@ -31,63 +48,109 @@ export default function UploadRecord() {
 
       const contract = await getPatientRecordsContract();
       const tx = await contract.addRecord(
-        patientAddr,
-        "Doctor Note",
-        cid
+        patientAddr,        // patient address
+        address,           // doctor address (msg.sender)
+        description || "Medical Record",
+        cid,
+        encrypt
       );
       await tx.wait();
 
-      setStatus(`✅ Record uploaded for patient: ${patientAddr}`);
+      setStatus(`✅ Record uploaded successfully for patient: ${patientAddr}`);
+      setFile(null);
+      setDescription("");
+      setSecretKey("");
+      onRecordUploaded?.();
     } catch (err: any) {
-      setStatus("❌ " + err.message);
+      console.error("Upload error:", err);
+      setStatus("❌ " + (err.message || "Failed to upload record"));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-3 p-4 border rounded shadow bg-white">
-      <input
-        type="text"
-        placeholder="Patient wallet address"
-        value={patientAddr}
-        onChange={(e) => setPatientAddr(e.target.value)}
-        className="border p-2 rounded w-full"
-      />
+    <div className="space-y-4 p-4 border rounded shadow bg-white max-w-md">
+      <h3 className="text-lg font-semibold">Upload Patient Record</h3>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Patient Address</label>
+        <input
+          type="text"
+          placeholder="0x..."
+          value={patientAddr}
+          onChange={(e) => setPatientAddr(e.target.value)}
+          className="border p-2 rounded w-full"
+          disabled={!!patientAddress}
+        />
+      </div>
 
-      <input
-        type="file"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="w-full"
-      />
+      <div>
+        <label className="block text-sm font-medium mb-1">Description</label>
+        <input
+          type="text"
+          placeholder="Record description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+      </div>
 
-      <div className="flex items-center space-x-3">
-        <label className="flex items-center space-x-1">
-          <input
-            type="checkbox"
-            checked={encrypt}
-            onChange={() => setEncrypt(!encrypt)}
-          />
-          <span>Encrypt before upload</span>
+      <div>
+        <label className="block text-sm font-medium mb-1">Medical File</label>
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full border p-2 rounded"
+          accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx"
+        />
+        {file && <p className="text-sm text-gray-600 mt-1">Selected: {file.name}</p>}
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="encrypt"
+          checked={encrypt}
+          onChange={() => setEncrypt(!encrypt)}
+          className="rounded"
+        />
+        <label htmlFor="encrypt" className="text-sm font-medium">
+          Encrypt file for privacy
         </label>
       </div>
 
       {encrypt && (
-        <input
-          type="password"
-          placeholder="Enter secret key"
-          value={secretKey}
-          onChange={(e) => setSecretKey(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">Encryption Key</label>
+          <input
+            type="password"
+            placeholder="Enter secret key for encryption"
+            value={secretKey}
+            onChange={(e) => setSecretKey(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Share this key securely with the patient for decryption
+          </p>
+        </div>
       )}
 
       <button
         onClick={handleUpload}
-        className="bg-green-600 text-white px-4 py-2 rounded w-full"
+        disabled={loading || !file || !patientAddr}
+        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded w-full transition-colors"
       >
-        Upload Patient Record
+        {loading ? "Uploading..." : "Upload Patient Record"}
       </button>
 
-      {status && <p className="text-sm">{status}</p>}
+      {status && (
+        <p className={`text-sm p-2 rounded ${
+          status.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        }`}>
+          {status}
+        </p>
+      )}
     </div>
   );
 }

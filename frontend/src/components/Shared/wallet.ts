@@ -24,7 +24,7 @@ console.log("WalletConnect projectId:", import.meta.env.VITE_WALLETCONNECT_PROJE
 export const config = createConfig({
   chains: [u2uChain],
   transports: {
-    [u2uChain.id]: http("https://rpc-testnet.u2u.xyz"),
+    [u2uChain.id]: http("https://rpc-nebulas-testnet.u2u.xyz"),
   },
   connectors: [
     injected(),

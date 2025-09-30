@@ -23,6 +23,33 @@ import type {
   TypedContractMethod,
 } from "./common";
 
+export declare namespace InstaDocHub {
+  export type HubRecordStruct = {
+    patient: AddressLike;
+    doctor: AddressLike;
+    description: string;
+    recordCID: string;
+    encrypted: boolean;
+    timestamp: BigNumberish;
+  };
+
+  export type HubRecordStructOutput = [
+    patient: string,
+    doctor: string,
+    description: string,
+    recordCID: string,
+    encrypted: boolean,
+    timestamp: bigint
+  ] & {
+    patient: string;
+    doctor: string;
+    description: string;
+    recordCID: string;
+    encrypted: boolean;
+    timestamp: bigint;
+  };
+}
+
 export declare namespace PatientRecords {
   export type RecordStruct = {
     doctor: AddressLike;
@@ -51,28 +78,49 @@ export interface InstaDocHubInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "addRecordForPatient"
+      | "admin"
+      | "allRecords"
       | "approveDoctor"
       | "consentRegistry"
+      | "doctorRecordIds"
       | "doctorRegistry"
       | "escrow"
+      | "getAllPatients"
+      | "getAllRecords"
+      | "getAllVerifiedDoctors"
+      | "getDoctorDetails"
+      | "getRecordsCount"
+      | "getRecordsRange"
       | "isDoctorVerified"
+      | "patientAddresses"
+      | "patientRecordIds"
       | "patientRecords"
       | "registerPatient"
       | "registeredPatients"
+      | "removePatient"
       | "revokeDoctor"
+      | "transferAdmin"
       | "viewMyRecords"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "AdminTransferred"
       | "DoctorApproved"
       | "DoctorRevoked"
       | "PatientRegistered"
+      | "PatientRemoved"
+      | "RecordAdded"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "addRecordForPatient",
     values: [AddressLike, string, string, boolean]
+  ): string;
+  encodeFunctionData(functionFragment: "admin", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "allRecords",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "approveDoctor",
@@ -83,13 +131,49 @@ export interface InstaDocHubInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "doctorRecordIds",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "doctorRegistry",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "escrow", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "getAllPatients",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getAllRecords",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getAllVerifiedDoctors",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDoctorDetails",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getRecordsCount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getRecordsRange",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "isDoctorVerified",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "patientAddresses",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "patientRecordIds",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "patientRecords",
@@ -104,7 +188,15 @@ export interface InstaDocHubInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "removePatient",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "revokeDoctor",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferAdmin",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -116,6 +208,8 @@ export interface InstaDocHubInterface extends Interface {
     functionFragment: "addRecordForPatient",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "allRecords", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "approveDoctor",
     data: BytesLike
@@ -125,12 +219,48 @@ export interface InstaDocHubInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "doctorRecordIds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "doctorRegistry",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "escrow", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "getAllPatients",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getAllRecords",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getAllVerifiedDoctors",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDoctorDetails",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRecordsCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRecordsRange",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "isDoctorVerified",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "patientAddresses",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "patientRecordIds",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -146,13 +276,34 @@ export interface InstaDocHubInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "removePatient",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "revokeDoctor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferAdmin",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "viewMyRecords",
     data: BytesLike
   ): Result;
+}
+
+export namespace AdminTransferredEvent {
+  export type InputTuple = [previousAdmin: AddressLike, newAdmin: AddressLike];
+  export type OutputTuple = [previousAdmin: string, newAdmin: string];
+  export interface OutputObject {
+    previousAdmin: string;
+    newAdmin: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace DoctorApprovedEvent {
@@ -184,6 +335,40 @@ export namespace PatientRegisteredEvent {
   export type OutputTuple = [patient: string];
   export interface OutputObject {
     patient: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace PatientRemovedEvent {
+  export type InputTuple = [patient: AddressLike];
+  export type OutputTuple = [patient: string];
+  export interface OutputObject {
+    patient: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace RecordAddedEvent {
+  export type InputTuple = [
+    patient: AddressLike,
+    doctor: AddressLike,
+    recordCID: string
+  ];
+  export type OutputTuple = [
+    patient: string,
+    doctor: string,
+    recordCID: string
+  ];
+  export interface OutputObject {
+    patient: string;
+    doctor: string;
+    recordCID: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -245,6 +430,23 @@ export interface InstaDocHub extends BaseContract {
     "nonpayable"
   >;
 
+  admin: TypedContractMethod<[], [string], "view">;
+
+  allRecords: TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [string, string, string, string, boolean, bigint] & {
+        patient: string;
+        doctor: string;
+        description: string;
+        recordCID: string;
+        encrypted: boolean;
+        timestamp: bigint;
+      }
+    ],
+    "view"
+  >;
+
   approveDoctor: TypedContractMethod<
     [
       doctorAddr: AddressLike,
@@ -258,13 +460,58 @@ export interface InstaDocHub extends BaseContract {
 
   consentRegistry: TypedContractMethod<[], [string], "view">;
 
+  doctorRecordIds: TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+
   doctorRegistry: TypedContractMethod<[], [string], "view">;
 
   escrow: TypedContractMethod<[], [string], "view">;
 
+  getAllPatients: TypedContractMethod<[], [string[]], "view">;
+
+  getAllRecords: TypedContractMethod<
+    [],
+    [InstaDocHub.HubRecordStructOutput[]],
+    "view"
+  >;
+
+  getAllVerifiedDoctors: TypedContractMethod<[], [string[]], "view">;
+
+  getDoctorDetails: TypedContractMethod<
+    [doctorAddr: AddressLike],
+    [
+      [string, string, string, boolean] & {
+        name: string;
+        specialization: string;
+        profileCID: string;
+        verified: boolean;
+      }
+    ],
+    "view"
+  >;
+
+  getRecordsCount: TypedContractMethod<[], [bigint], "view">;
+
+  getRecordsRange: TypedContractMethod<
+    [start: BigNumberish, end: BigNumberish],
+    [InstaDocHub.HubRecordStructOutput[]],
+    "view"
+  >;
+
   isDoctorVerified: TypedContractMethod<
     [doctor: AddressLike],
     [boolean],
+    "view"
+  >;
+
+  patientAddresses: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
+  patientRecordIds: TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
     "view"
   >;
 
@@ -278,8 +525,20 @@ export interface InstaDocHub extends BaseContract {
     "view"
   >;
 
+  removePatient: TypedContractMethod<
+    [patientAddr: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   revokeDoctor: TypedContractMethod<
     [doctorAddr: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  transferAdmin: TypedContractMethod<
+    [newAdmin: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -307,6 +566,25 @@ export interface InstaDocHub extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "admin"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "allRecords"
+  ): TypedContractMethod<
+    [arg0: BigNumberish],
+    [
+      [string, string, string, string, boolean, bigint] & {
+        patient: string;
+        doctor: string;
+        description: string;
+        recordCID: string;
+        encrypted: boolean;
+        timestamp: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "approveDoctor"
   ): TypedContractMethod<
     [
@@ -322,14 +600,64 @@ export interface InstaDocHub extends BaseContract {
     nameOrSignature: "consentRegistry"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "doctorRecordIds"
+  ): TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "doctorRegistry"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "escrow"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "getAllPatients"
+  ): TypedContractMethod<[], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getAllRecords"
+  ): TypedContractMethod<[], [InstaDocHub.HubRecordStructOutput[]], "view">;
+  getFunction(
+    nameOrSignature: "getAllVerifiedDoctors"
+  ): TypedContractMethod<[], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getDoctorDetails"
+  ): TypedContractMethod<
+    [doctorAddr: AddressLike],
+    [
+      [string, string, string, boolean] & {
+        name: string;
+        specialization: string;
+        profileCID: string;
+        verified: boolean;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getRecordsCount"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getRecordsRange"
+  ): TypedContractMethod<
+    [start: BigNumberish, end: BigNumberish],
+    [InstaDocHub.HubRecordStructOutput[]],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "isDoctorVerified"
   ): TypedContractMethod<[doctor: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "patientAddresses"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  getFunction(
+    nameOrSignature: "patientRecordIds"
+  ): TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "patientRecords"
   ): TypedContractMethod<[], [string], "view">;
@@ -340,12 +668,25 @@ export interface InstaDocHub extends BaseContract {
     nameOrSignature: "registeredPatients"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
+    nameOrSignature: "removePatient"
+  ): TypedContractMethod<[patientAddr: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "revokeDoctor"
   ): TypedContractMethod<[doctorAddr: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "transferAdmin"
+  ): TypedContractMethod<[newAdmin: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "viewMyRecords"
   ): TypedContractMethod<[], [PatientRecords.RecordStructOutput[]], "view">;
 
+  getEvent(
+    key: "AdminTransferred"
+  ): TypedContractEvent<
+    AdminTransferredEvent.InputTuple,
+    AdminTransferredEvent.OutputTuple,
+    AdminTransferredEvent.OutputObject
+  >;
   getEvent(
     key: "DoctorApproved"
   ): TypedContractEvent<
@@ -367,8 +708,33 @@ export interface InstaDocHub extends BaseContract {
     PatientRegisteredEvent.OutputTuple,
     PatientRegisteredEvent.OutputObject
   >;
+  getEvent(
+    key: "PatientRemoved"
+  ): TypedContractEvent<
+    PatientRemovedEvent.InputTuple,
+    PatientRemovedEvent.OutputTuple,
+    PatientRemovedEvent.OutputObject
+  >;
+  getEvent(
+    key: "RecordAdded"
+  ): TypedContractEvent<
+    RecordAddedEvent.InputTuple,
+    RecordAddedEvent.OutputTuple,
+    RecordAddedEvent.OutputObject
+  >;
 
   filters: {
+    "AdminTransferred(address,address)": TypedContractEvent<
+      AdminTransferredEvent.InputTuple,
+      AdminTransferredEvent.OutputTuple,
+      AdminTransferredEvent.OutputObject
+    >;
+    AdminTransferred: TypedContractEvent<
+      AdminTransferredEvent.InputTuple,
+      AdminTransferredEvent.OutputTuple,
+      AdminTransferredEvent.OutputObject
+    >;
+
     "DoctorApproved(address)": TypedContractEvent<
       DoctorApprovedEvent.InputTuple,
       DoctorApprovedEvent.OutputTuple,
@@ -400,6 +766,28 @@ export interface InstaDocHub extends BaseContract {
       PatientRegisteredEvent.InputTuple,
       PatientRegisteredEvent.OutputTuple,
       PatientRegisteredEvent.OutputObject
+    >;
+
+    "PatientRemoved(address)": TypedContractEvent<
+      PatientRemovedEvent.InputTuple,
+      PatientRemovedEvent.OutputTuple,
+      PatientRemovedEvent.OutputObject
+    >;
+    PatientRemoved: TypedContractEvent<
+      PatientRemovedEvent.InputTuple,
+      PatientRemovedEvent.OutputTuple,
+      PatientRemovedEvent.OutputObject
+    >;
+
+    "RecordAdded(address,address,string)": TypedContractEvent<
+      RecordAddedEvent.InputTuple,
+      RecordAddedEvent.OutputTuple,
+      RecordAddedEvent.OutputObject
+    >;
+    RecordAdded: TypedContractEvent<
+      RecordAddedEvent.InputTuple,
+      RecordAddedEvent.OutputTuple,
+      RecordAddedEvent.OutputObject
     >;
   };
 }

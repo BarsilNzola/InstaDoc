@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type {
   BaseContract,
+  BigNumberish,
   BytesLike,
   FunctionFragment,
   Result,
@@ -26,7 +27,10 @@ export interface DoctorRegistryInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "admin"
+      | "doctorAddresses"
       | "doctors"
+      | "getAllVerifiedDoctors"
+      | "getDoctorDetails"
       | "isVerified"
       | "registerDoctor"
       | "revokeDoctor"
@@ -39,7 +43,19 @@ export interface DoctorRegistryInterface extends Interface {
 
   encodeFunctionData(functionFragment: "admin", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "doctorAddresses",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "doctors",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getAllVerifiedDoctors",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDoctorDetails",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -60,7 +76,19 @@ export interface DoctorRegistryInterface extends Interface {
   ): string;
 
   decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "doctorAddresses",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "doctors", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getAllVerifiedDoctors",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDoctorDetails",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "isVerified", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "registerDoctor",
@@ -158,8 +186,25 @@ export interface DoctorRegistry extends BaseContract {
 
   admin: TypedContractMethod<[], [string], "view">;
 
+  doctorAddresses: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+
   doctors: TypedContractMethod<
     [arg0: AddressLike],
+    [
+      [string, string, string, boolean] & {
+        name: string;
+        specialization: string;
+        profileCID: string;
+        verified: boolean;
+      }
+    ],
+    "view"
+  >;
+
+  getAllVerifiedDoctors: TypedContractMethod<[], [string[]], "view">;
+
+  getDoctorDetails: TypedContractMethod<
+    [doctorAddr: AddressLike],
     [
       [string, string, string, boolean] & {
         name: string;
@@ -204,9 +249,29 @@ export interface DoctorRegistry extends BaseContract {
     nameOrSignature: "admin"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "doctorAddresses"
+  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  getFunction(
     nameOrSignature: "doctors"
   ): TypedContractMethod<
     [arg0: AddressLike],
+    [
+      [string, string, string, boolean] & {
+        name: string;
+        specialization: string;
+        profileCID: string;
+        verified: boolean;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getAllVerifiedDoctors"
+  ): TypedContractMethod<[], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getDoctorDetails"
+  ): TypedContractMethod<
+    [doctorAddr: AddressLike],
     [
       [string, string, string, boolean] & {
         name: string;
