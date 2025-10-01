@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { readContract } from "wagmi/actions";
 import { parseEther } from "viem";
 import { retrieveJSON } from "../../lib/ipfs";
+import { config } from "../Shared/wallet";
 import escrowArtifact from "../../abis/EscrowPayments.json";
 import hubArtifact from "../../abis/InstaDocHub.json";
 
@@ -55,119 +57,6 @@ export default function BookAppointment() {
     return Array.from(new Set(doctorAddresses as string[]));
   }, [doctorAddresses]);
 
-  // Create individual contract calls for each doctor
-  const [doctorDetails, setDoctorDetails] = useState<any[]>([]);
-
-  // Fetch doctor details with IPFS data - simplified version
-  useEffect(() => {
-    const loadDoctorDetails = async () => {
-      if (!uniqueDoctorAddresses || !Array.isArray(uniqueDoctorAddresses) || uniqueDoctorAddresses.length === 0) {
-        console.log('🔄 No verified doctors found');
-        setDoctors([]);
-        setLoadingDoctors(false);
-        return;
-      }
-  
-      console.log('🔄 Loading doctor details for', uniqueDoctorAddresses.length, 'doctors from contract and IPFS');
-      setLoadingDoctors(true);
-  
-      try {
-        const doctorsWithDetails: Doctor[] = [];
-  
-        for (const addr of uniqueDoctorAddresses) {
-          try {
-            console.log(`🔄 Processing doctor: ${addr}`);
-            
-            // Use a single contract call for each doctor
-            const { data: details } = useReadContract({
-              address: hubAddress as `0x${string}`,
-              abi: hubAbi,
-              functionName: "getDoctorDetails",
-              args: [addr],
-              query: {
-                enabled: !!uniqueDoctorAddresses && uniqueDoctorAddresses.length > 0,
-              },
-            });
-            
-            if (details) {
-              console.log(`✅ Contract details for ${addr}:`, details);
-              
-              let doctorProfile: DoctorProfile | null = null;
-              const profileCID = (details as any).profileCID || (details as any)[2] || "";
-              
-              console.log(`  - Profile CID from contract: "${profileCID}"`);
-              
-              // Fetch from IPFS if CID exists and is not empty
-              if (profileCID && profileCID !== "" && profileCID !== "0x") {
-                console.log(`  - Found IPFS CID: ${profileCID}`);
-                doctorProfile = await fetchDoctorProfile(profileCID);
-                
-                if (doctorProfile) {
-                  console.log(`  ✅ Successfully loaded IPFS profile:`, doctorProfile);
-                } else {
-                  console.log(`  ⚠️ Could not load IPFS profile`);
-                }
-              } else {
-                console.log(`  - No valid IPFS CID found in contract`);
-              }
-  
-              // Use contract data
-              const contractName = (details as any).name || (details as any)[0] || "";
-              const contractSpecialization = (details as any).specialization || (details as any)[1] || "";
-  
-              console.log(`  - Contract name: "${contractName}"`);
-              console.log(`  - Contract specialization: "${contractSpecialization}"`);
-  
-              const finalName = doctorProfile?.name || contractName || `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-              const finalSpecialization = doctorProfile?.specialization || contractSpecialization || "General Medicine";
-  
-              doctorsWithDetails.push({
-                address: addr,
-                name: finalName,
-                specialization: finalSpecialization,
-                profileCID: profileCID,
-                verified: true,
-                bio: doctorProfile?.bio,
-                qualifications: doctorProfile?.qualifications,
-                contactInfo: doctorProfile?.contactInfo,
-              });
-            } else {
-              console.log(`❌ No contract details found for ${addr}`);
-              // Add basic fallback
-              doctorsWithDetails.push({
-                address: addr,
-                name: `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`,
-                specialization: "General Medicine",
-                profileCID: "",
-                verified: true,
-              });
-            }
-          } catch (error) {
-            console.error(`❌ Error processing doctor ${addr}:`, error);
-            // Add basic fallback
-            doctorsWithDetails.push({
-              address: addr,
-              name: `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`,
-              specialization: "General Medicine",
-              profileCID: "",
-              verified: true,
-            });
-          }
-        }
-  
-        console.log('✅ Final doctors list for booking:', doctorsWithDetails);
-        setDoctors(doctorsWithDetails);
-      } catch (error) {
-        console.error('❌ Error loading doctor details:', error);
-        setDoctors([]);
-      } finally {
-        setLoadingDoctors(false);
-      }
-    };
-  
-    loadDoctorDetails();
-  }, [uniqueDoctorAddresses]);
-
   // Fetch doctor profile from IPFS
   const fetchDoctorProfile = async (cid: string): Promise<DoctorProfile | null> => {
     if (!cid || cid === "") {
@@ -201,10 +90,10 @@ export default function BookAppointment() {
     }
   };
 
-  // Fetch doctor details with IPFS data
+  // Load doctor details with IPFS data
   useEffect(() => {
     const loadDoctorDetails = async () => {
-      if (!uniqueDoctorAddresses || !Array.isArray(uniqueDoctorAddresses)) {
+      if (!hubAddress || !uniqueDoctorAddresses || uniqueDoctorAddresses.length === 0) {
         console.log('🔄 No verified doctors found');
         setDoctors([]);
         setLoadingDoctors(false);
@@ -215,93 +104,68 @@ export default function BookAppointment() {
       setLoadingDoctors(true);
 
       try {
-        const doctorsWithDetails: Doctor[] = [];
+        const doctorDetails = await Promise.all(
+          uniqueDoctorAddresses.map(async (addr) => {
+            try {
+              const details: any = await readContract(config, {
+                address: hubAddress as `0x${string}`,
+                abi: hubAbi,
+                functionName: "getDoctorDetails",
+                args: [addr],
+              });
 
-        for (let i = 0; i < uniqueDoctorAddresses.length; i++) {
-          const addr = uniqueDoctorAddresses[i];
-          try {
-            console.log(`🔄 Processing doctor ${i + 1}/${uniqueDoctorAddresses.length}: ${addr}`);
-            
-            // Get doctor details from the query
-            const details = doctorDetails[i]?.data as any;
-            
-            if (details) {
               console.log(`✅ Contract details for ${addr}:`, details);
-              
-              let doctorProfile: DoctorProfile | null = null;
-              const profileCID = details.profileCID || details[2] || "";
-              
-              console.log(`  - Profile CID from contract: "${profileCID}"`);
+
+              const profileCID = details?.[2] ?? details?.profileCID ?? "";
+              let ipfsProfile: DoctorProfile | null = null;
               
               // Fetch from IPFS if CID exists and is not empty
               if (profileCID && profileCID !== "" && profileCID !== "0x") {
-                console.log(`  - Found IPFS CID: ${profileCID}`);
-                doctorProfile = await fetchDoctorProfile(profileCID);
+                console.log(`  - Found IPFS CID: ${profileCID}, fetching from IPFS...`);
+                ipfsProfile = await fetchDoctorProfile(profileCID);
                 
-                if (doctorProfile) {
-                  console.log(`  ✅ Successfully loaded IPFS profile:`, doctorProfile);
+                if (ipfsProfile) {
+                  console.log(`  ✅ Successfully loaded IPFS profile:`, ipfsProfile);
                 } else {
-                  console.log(`  ⚠️ Could not load IPFS profile`);
+                  console.log(`  ⚠️ Could not load IPFS profile from CID: ${profileCID}`);
                 }
               } else {
-                console.log(`  - No valid IPFS CID found in contract`);
+                console.log(`  - No valid IPFS CID found in contract data`);
               }
 
-              // Use contract data
-              const contractName = details.name || details[0] || "";
-              const contractSpecialization = details.specialization || details[1] || "";
+              // The contract returns: (name, specialization, profileCID, verified)
+              const name = ipfsProfile?.name || details?.[0] || `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+              const specializationVal = ipfsProfile?.specialization || details?.[1] || "General Medicine";
 
-              console.log(`  - Contract name: "${contractName}"`);
-              console.log(`  - Contract specialization: "${contractSpecialization}"`);
+              console.log(`  - Final doctor: ${name} - ${specializationVal}`);
 
-              const finalName = doctorProfile?.name || contractName || `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-              const finalSpecialization = doctorProfile?.specialization || contractSpecialization || "General Medicine";
-
-              console.log(`  - Final data:`, {
-                name: finalName,
-                specialization: finalSpecialization,
-                hasIPFSData: !!doctorProfile,
-                hasContractData: !!contractName
-              });
-
-              doctorsWithDetails.push({
+              return {
                 address: addr,
-                name: finalName,
-                specialization: finalSpecialization,
-                profileCID: profileCID,
-                verified: true,
-                bio: doctorProfile?.bio,
-                qualifications: doctorProfile?.qualifications,
-                contactInfo: doctorProfile?.contactInfo,
-              });
-            } else {
-              console.log(`❌ No contract details found for ${addr}`);
-              // Add basic fallback
-              doctorsWithDetails.push({
+                name,
+                specialization: specializationVal,
+                profileCID,
+                verified: details?.[3] ?? true,
+                bio: ipfsProfile?.bio,
+                qualifications: ipfsProfile?.qualifications,
+                contactInfo: ipfsProfile?.contactInfo,
+              } as Doctor;
+            } catch (err) {
+              console.error(`❌ Error loading doctor ${addr}:`, err);
+              return {
                 address: addr,
                 name: `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`,
                 specialization: "General Medicine",
                 profileCID: "",
                 verified: true,
-              });
+              } as Doctor;
             }
-          } catch (error) {
-            console.error(`❌ Error processing doctor ${addr}:`, error);
-            // Add basic fallback
-            doctorsWithDetails.push({
-              address: addr,
-              name: `Dr. ${addr.slice(0, 6)}...${addr.slice(-4)}`,
-              specialization: "General Medicine",
-              profileCID: "",
-              verified: true,
-            });
-          }
-        }
+          })
+        );
 
-        console.log('✅ Final doctors list for booking:', doctorsWithDetails);
-        setDoctors(doctorsWithDetails);
-      } catch (error) {
-        console.error('❌ Error loading doctor details:', error);
+        console.log('✅ Final doctors list for booking:', doctorDetails);
+        setDoctors(doctorDetails);
+      } catch (err) {
+        console.error('❌ Error loading doctor details:', err);
         setDoctors([]);
       } finally {
         setLoadingDoctors(false);
@@ -309,7 +173,7 @@ export default function BookAppointment() {
     };
 
     loadDoctorDetails();
-  }, [uniqueDoctorAddresses, doctorDetails]);
+  }, [hubAddress, uniqueDoctorAddresses]); 
 
   const { 
     writeContract: bookAppointment, 

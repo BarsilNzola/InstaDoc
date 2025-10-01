@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { getEscrowContract } from "../../lib/contracts";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { confirmAppointment } from "../../lib/contracts";
 
 interface AcceptAppointmentProps {
   appointmentId: number;
@@ -11,7 +11,12 @@ export default function AcceptAppointment({ appointmentId, onAppointmentAccepted
   const [loading, setLoading] = useState(false);
   const { address } = useAccount();
 
-  const acceptAppointment = async (id: number) => {
+  const { writeContract: confirmAppointmentTx, data: txHash, isPending: isWriting } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  const handleAcceptAppointment = async (id: number) => {
     if (!address) {
       alert("Please connect your wallet first");
       return;
@@ -19,27 +24,30 @@ export default function AcceptAppointment({ appointmentId, onAppointmentAccepted
 
     setLoading(true);
     try {
-      const escrow = await getEscrowContract();
-      const tx = await escrow.completeAppointment(id);
-      await tx.wait();
-      
-      alert("Appointment completed and payment released!");
-      onAppointmentAccepted?.();
+      await confirmAppointment(BigInt(id));
     } catch (err: any) {
       console.error("Error accepting appointment:", err);
       alert(`Failed to accept appointment: ${err.message}`);
-    } finally {
       setLoading(false);
     }
   };
 
+  // Handle successful confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      alert("✅ Appointment confirmed! The patient can now see it in their consultations.");
+      onAppointmentAccepted?.();
+      setLoading(false);
+    }
+  }, [isConfirmed, onAppointmentAccepted]);
+
   return (
     <button 
-      onClick={() => acceptAppointment(appointmentId)} 
-      disabled={loading}
+      onClick={() => handleAcceptAppointment(appointmentId)} 
+      disabled={loading || isWriting || isConfirming}
       className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors"
     >
-      {loading ? "Processing..." : `Complete Appointment #${appointmentId}`}
+      {loading || isWriting || isConfirming ? "Confirming..." : `Confirm Appointment #${appointmentId}`}
     </button>
   );
 }

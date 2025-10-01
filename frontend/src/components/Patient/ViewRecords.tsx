@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
-import { getPatientRecordsContract } from "../../lib/contracts";
+import { getPatientDetails, getPatientRecordsAddress } from "../../lib/contracts";
 import { downloadEncryptedFile, downloadFile } from "../../lib/ipfs";
+import { readContract } from "wagmi/actions";
+import { config } from "../Shared/wallet";
+import patientArtifact from "../../abis/PatientRecords.json";
 
 interface MedicalRecord {
   doctor: string;
@@ -26,11 +29,19 @@ export default function ViewRecords() {
 
     setLoading(true);
     try {
-      const contract = await getPatientRecordsContract();
-      const data = await contract.getRecords(address);
+      // Get patient records address
+      const patientRecordsAddress = await getPatientRecordsAddress();
+      
+      // Get records using readContract
+      const data = await readContract(config, {
+        address: patientRecordsAddress,
+        abi: patientArtifact.abi,
+        functionName: "getRecords",
+        args: [address],
+      });
       
       // Convert BigInt to number and format records
-      const formattedRecords: MedicalRecord[] = data.map((rec: any) => ({
+      const formattedRecords: MedicalRecord[] = (data as any[]).map((rec: any) => ({
         doctor: rec.doctor,
         description: rec.description,
         ipfsHash: rec.ipfsHash,

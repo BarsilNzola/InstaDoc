@@ -5,6 +5,7 @@ import ViewRecords from "./ViewRecords";
 import PatientVideoConsultation from "./PatientVideoConsultation";
 import BookAppointment from "./BookAppointment";
 import hubArtifact from "../../abis/InstaDocHub.json";
+import PatientBookedAppointments from "./PatientBookedAppointments";
 
 export default function PatientDashboard() {
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
@@ -12,11 +13,15 @@ export default function PatientDashboard() {
   const hubAddress = import.meta.env.VITE_HUB_ADDRESS;
   const hubAbi = hubArtifact.abi;
 
-  // Check if patient is already registered
-  const { data: isPatientRegistered, refetch: checkRegistration } = useReadContract({
+  const { 
+    data: isPatientRegistered, 
+    refetch: checkRegistration, 
+    isLoading: checkingRegistration,
+    error: registrationError 
+  } = useReadContract({
     address: hubAddress as `0x${string}`,
     abi: hubAbi,
-    functionName: "isPatientRegistered",
+    functionName: "registeredPatients",
     args: [address],
     query: {
       enabled: !!address,
@@ -24,14 +29,28 @@ export default function PatientDashboard() {
   });
 
   useEffect(() => {
-    if (isPatientRegistered !== undefined) {
+    console.log('🔍 Registration check:', {
+      address,
+      isPatientRegistered,
+      checkingRegistration,
+      registrationError
+    });
+
+    if (registrationError) {
+      console.error('❌ Error checking registration:', registrationError);
+      setIsRegistered(false);
+    } else if (isPatientRegistered !== undefined) {
       setIsRegistered(!!isPatientRegistered);
     }
-  }, [isPatientRegistered]);
+  }, [isPatientRegistered, checkingRegistration, registrationError, address]);
 
   const handleRegistrationSuccess = () => {
-    setIsRegistered(true);
-    checkRegistration(); // Re-check registration status
+    console.log('✅ Registration successful, refreshing...');
+    
+    // Wait a bit for blockchain state to update, then refresh
+    setTimeout(() => {
+      checkRegistration();
+    }, 3000);
   };
 
   if (!address) {
@@ -42,7 +61,7 @@ export default function PatientDashboard() {
     );
   }
 
-  if (isRegistered === null) {
+  if (checkingRegistration && isRegistered === null) {
     return (
       <div className="p-4 border rounded bg-white">
         <div className="flex items-center space-x-2 text-gray-600">
@@ -53,7 +72,7 @@ export default function PatientDashboard() {
     );
   }
 
-  if (!isRegistered) {
+  if (isRegistered === false) {
     return (
       <div className="space-y-6 p-4">
         <h2 className="text-2xl font-bold">Patient Dashboard</h2>
@@ -66,6 +85,7 @@ export default function PatientDashboard() {
     <div className="space-y-6 p-4">
       <h2 className="text-2xl font-bold">Patient Dashboard</h2>
       <BookAppointment />
+      <PatientBookedAppointments />
       <PatientVideoConsultation />
       <ViewRecords />
     </div>

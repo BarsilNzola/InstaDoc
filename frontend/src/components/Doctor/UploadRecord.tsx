@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { uploadEncryptedFile, uploadFile } from "../../lib/ipfs";
-import { getPatientRecordsContract } from "../../lib/contracts";
-import { useAccount } from "wagmi";
+import { getPatientRecordsAddress } from "../../lib/contracts";
+import patientArtifact from "../../abis/PatientRecords.json";
 
 interface UploadRecordProps {
   patientAddress?: string;
@@ -17,6 +18,23 @@ export default function UploadRecord({ patientAddress, onRecordUploaded }: Uploa
   const [encrypt, setEncrypt] = useState(true);
   const [secretKey, setSecretKey] = useState("");
   const { address } = useAccount();
+
+  const { writeContract: addRecord, data: txHash, isPending: isWriting } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Handle successful transaction
+  useEffect(() => {
+    if (isConfirmed) {
+      setStatus(`✅ Record uploaded successfully for patient: ${patientAddr}`);
+      setFile(null);
+      setDescription("");
+      setSecretKey("");
+      setLoading(false);
+      onRecordUploaded?.();
+    }
+  }, [isConfirmed, patientAddr, onRecordUploaded]);
 
   const handleUpload = async () => {
     if (!file || !patientAddr) {
@@ -46,25 +64,24 @@ export default function UploadRecord({ patientAddress, onRecordUploaded }: Uploa
         cid = await uploadFile(file);
       }
 
-      const contract = await getPatientRecordsContract();
-      const tx = await contract.addRecord(
-        patientAddr,        // patient address
-        address,           // doctor address (msg.sender)
-        description || "Medical Record",
-        cid,
-        encrypt
-      );
-      await tx.wait();
+      const patientRecordsAddress = await getPatientRecordsAddress();
+      
+      addRecord({
+        address: patientRecordsAddress,
+        abi: patientArtifact.abi,
+        functionName: "addRecord",
+        args: [
+          patientAddr,        // patient address
+          address,           // doctor address (msg.sender)
+          description || "Medical Record",
+          cid,
+          encrypt
+        ],
+      });
 
-      setStatus(`✅ Record uploaded successfully for patient: ${patientAddr}`);
-      setFile(null);
-      setDescription("");
-      setSecretKey("");
-      onRecordUploaded?.();
     } catch (err: any) {
       console.error("Upload error:", err);
       setStatus("❌ " + (err.message || "Failed to upload record"));
-    } finally {
       setLoading(false);
     }
   };
@@ -138,10 +155,10 @@ export default function UploadRecord({ patientAddress, onRecordUploaded }: Uploa
 
       <button
         onClick={handleUpload}
-        disabled={loading || !file || !patientAddr}
+        disabled={loading || isWriting || isConfirming || !file || !patientAddr}
         className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded w-full transition-colors"
       >
-        {loading ? "Uploading..." : "Upload Patient Record"}
+        {loading || isWriting || isConfirming ? "Uploading..." : "Upload Patient Record"}
       </button>
 
       {status && (

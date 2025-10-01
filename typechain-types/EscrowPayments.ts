@@ -29,9 +29,12 @@ export interface EscrowPaymentsInterface extends Interface {
       | "admin"
       | "appointments"
       | "bookAppointment"
-      | "cancelAppointment"
+      | "cancelByDoctor"
+      | "cancelByPatient"
       | "completeAppointment"
+      | "confirmAppointment"
       | "disputeAppointment"
+      | "getPatientAppointments"
       | "nextAppointmentId"
       | "resolveDispute"
   ): FunctionFragment;
@@ -39,8 +42,10 @@ export interface EscrowPaymentsInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "AppointmentBooked"
-      | "AppointmentCancelled"
+      | "AppointmentCancelledByDoctor"
+      | "AppointmentCancelledByPatient"
       | "AppointmentCompleted"
+      | "AppointmentConfirmed"
       | "AppointmentDisputed"
       | "FundsReleased"
   ): EventFragment;
@@ -55,7 +60,11 @@ export interface EscrowPaymentsInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "cancelAppointment",
+    functionFragment: "cancelByDoctor",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "cancelByPatient",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -63,8 +72,16 @@ export interface EscrowPaymentsInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "confirmAppointment",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "disputeAppointment",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPatientAppointments",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "nextAppointmentId",
@@ -85,7 +102,11 @@ export interface EscrowPaymentsInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "cancelAppointment",
+    functionFragment: "cancelByDoctor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "cancelByPatient",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -93,7 +114,15 @@ export interface EscrowPaymentsInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "confirmAppointment",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "disputeAppointment",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getPatientAppointments",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -131,7 +160,19 @@ export namespace AppointmentBookedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace AppointmentCancelledEvent {
+export namespace AppointmentCancelledByDoctorEvent {
+  export type InputTuple = [appointmentId: BigNumberish];
+  export type OutputTuple = [appointmentId: bigint];
+  export interface OutputObject {
+    appointmentId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace AppointmentCancelledByPatientEvent {
   export type InputTuple = [appointmentId: BigNumberish];
   export type OutputTuple = [appointmentId: bigint];
   export interface OutputObject {
@@ -144,6 +185,18 @@ export namespace AppointmentCancelledEvent {
 }
 
 export namespace AppointmentCompletedEvent {
+  export type InputTuple = [appointmentId: BigNumberish];
+  export type OutputTuple = [appointmentId: bigint];
+  export interface OutputObject {
+    appointmentId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace AppointmentConfirmedEvent {
   export type InputTuple = [appointmentId: BigNumberish];
   export type OutputTuple = [appointmentId: bigint];
   export interface OutputObject {
@@ -249,7 +302,13 @@ export interface EscrowPayments extends BaseContract {
     "payable"
   >;
 
-  cancelAppointment: TypedContractMethod<
+  cancelByDoctor: TypedContractMethod<
+    [appointmentId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  cancelByPatient: TypedContractMethod<
     [appointmentId: BigNumberish],
     [void],
     "nonpayable"
@@ -261,10 +320,22 @@ export interface EscrowPayments extends BaseContract {
     "nonpayable"
   >;
 
+  confirmAppointment: TypedContractMethod<
+    [appointmentId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   disputeAppointment: TypedContractMethod<
     [appointmentId: BigNumberish],
     [void],
     "nonpayable"
+  >;
+
+  getPatientAppointments: TypedContractMethod<
+    [patient: AddressLike],
+    [bigint[]],
+    "view"
   >;
 
   nextAppointmentId: TypedContractMethod<[], [bigint], "view">;
@@ -300,14 +371,23 @@ export interface EscrowPayments extends BaseContract {
     nameOrSignature: "bookAppointment"
   ): TypedContractMethod<[doctor: AddressLike], [bigint], "payable">;
   getFunction(
-    nameOrSignature: "cancelAppointment"
+    nameOrSignature: "cancelByDoctor"
+  ): TypedContractMethod<[appointmentId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "cancelByPatient"
   ): TypedContractMethod<[appointmentId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "completeAppointment"
   ): TypedContractMethod<[appointmentId: BigNumberish], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "confirmAppointment"
+  ): TypedContractMethod<[appointmentId: BigNumberish], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "disputeAppointment"
   ): TypedContractMethod<[appointmentId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "getPatientAppointments"
+  ): TypedContractMethod<[patient: AddressLike], [bigint[]], "view">;
   getFunction(
     nameOrSignature: "nextAppointmentId"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -327,11 +407,18 @@ export interface EscrowPayments extends BaseContract {
     AppointmentBookedEvent.OutputObject
   >;
   getEvent(
-    key: "AppointmentCancelled"
+    key: "AppointmentCancelledByDoctor"
   ): TypedContractEvent<
-    AppointmentCancelledEvent.InputTuple,
-    AppointmentCancelledEvent.OutputTuple,
-    AppointmentCancelledEvent.OutputObject
+    AppointmentCancelledByDoctorEvent.InputTuple,
+    AppointmentCancelledByDoctorEvent.OutputTuple,
+    AppointmentCancelledByDoctorEvent.OutputObject
+  >;
+  getEvent(
+    key: "AppointmentCancelledByPatient"
+  ): TypedContractEvent<
+    AppointmentCancelledByPatientEvent.InputTuple,
+    AppointmentCancelledByPatientEvent.OutputTuple,
+    AppointmentCancelledByPatientEvent.OutputObject
   >;
   getEvent(
     key: "AppointmentCompleted"
@@ -339,6 +426,13 @@ export interface EscrowPayments extends BaseContract {
     AppointmentCompletedEvent.InputTuple,
     AppointmentCompletedEvent.OutputTuple,
     AppointmentCompletedEvent.OutputObject
+  >;
+  getEvent(
+    key: "AppointmentConfirmed"
+  ): TypedContractEvent<
+    AppointmentConfirmedEvent.InputTuple,
+    AppointmentConfirmedEvent.OutputTuple,
+    AppointmentConfirmedEvent.OutputObject
   >;
   getEvent(
     key: "AppointmentDisputed"
@@ -367,15 +461,26 @@ export interface EscrowPayments extends BaseContract {
       AppointmentBookedEvent.OutputObject
     >;
 
-    "AppointmentCancelled(uint256)": TypedContractEvent<
-      AppointmentCancelledEvent.InputTuple,
-      AppointmentCancelledEvent.OutputTuple,
-      AppointmentCancelledEvent.OutputObject
+    "AppointmentCancelledByDoctor(uint256)": TypedContractEvent<
+      AppointmentCancelledByDoctorEvent.InputTuple,
+      AppointmentCancelledByDoctorEvent.OutputTuple,
+      AppointmentCancelledByDoctorEvent.OutputObject
     >;
-    AppointmentCancelled: TypedContractEvent<
-      AppointmentCancelledEvent.InputTuple,
-      AppointmentCancelledEvent.OutputTuple,
-      AppointmentCancelledEvent.OutputObject
+    AppointmentCancelledByDoctor: TypedContractEvent<
+      AppointmentCancelledByDoctorEvent.InputTuple,
+      AppointmentCancelledByDoctorEvent.OutputTuple,
+      AppointmentCancelledByDoctorEvent.OutputObject
+    >;
+
+    "AppointmentCancelledByPatient(uint256)": TypedContractEvent<
+      AppointmentCancelledByPatientEvent.InputTuple,
+      AppointmentCancelledByPatientEvent.OutputTuple,
+      AppointmentCancelledByPatientEvent.OutputObject
+    >;
+    AppointmentCancelledByPatient: TypedContractEvent<
+      AppointmentCancelledByPatientEvent.InputTuple,
+      AppointmentCancelledByPatientEvent.OutputTuple,
+      AppointmentCancelledByPatientEvent.OutputObject
     >;
 
     "AppointmentCompleted(uint256)": TypedContractEvent<
@@ -387,6 +492,17 @@ export interface EscrowPayments extends BaseContract {
       AppointmentCompletedEvent.InputTuple,
       AppointmentCompletedEvent.OutputTuple,
       AppointmentCompletedEvent.OutputObject
+    >;
+
+    "AppointmentConfirmed(uint256)": TypedContractEvent<
+      AppointmentConfirmedEvent.InputTuple,
+      AppointmentConfirmedEvent.OutputTuple,
+      AppointmentConfirmedEvent.OutputObject
+    >;
+    AppointmentConfirmed: TypedContractEvent<
+      AppointmentConfirmedEvent.InputTuple,
+      AppointmentConfirmedEvent.OutputTuple,
+      AppointmentConfirmedEvent.OutputObject
     >;
 
     "AppointmentDisputed(uint256)": TypedContractEvent<
