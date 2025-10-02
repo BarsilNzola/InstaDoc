@@ -81,10 +81,13 @@ export default function ConnectWallet({ onConnect, compact = false }: ConnectWal
             </svg>
           )}
           
-          {compact && c.name.toLowerCase().includes('metamask') && <span className="text-xs">MetaMask</span>}
-          {compact && c.name.toLowerCase().includes('walletconnect') && <span className="text-xs">Wallet</span>}
-          {compact && !c.name.toLowerCase().includes('metamask') && !c.name.toLowerCase().includes('walletconnect') && (
-            <span className="text-xs">Connect</span>
+          {/* Show proper wallet names in compact mode */}
+          {compact && (
+            <span className="text-xs">
+              {c.name.toLowerCase().includes('metamask') && 'MetaMask'}
+              {c.name.toLowerCase().includes('walletconnect') && 'WalletConnect'}
+              {!c.name.toLowerCase().includes('metamask') && !c.name.toLowerCase().includes('walletconnect') && c.name}
+            </span>
           )}
           
           {isPending && (
