@@ -12,12 +12,11 @@ contract InstaDocHub {
     EscrowPayments public escrow;
     PatientRecords public patientRecords;
 
-    address public admin; // Track hub admin separately
+    address public admin;
 
     mapping(address => bool) public registeredPatients;
-    address[] public patientAddresses; // Track all patient addresses
+    address[] public patientAddresses;
 
-    // Track all records in the hub
     struct HubRecord {
         address patient;
         address doctor;
@@ -28,8 +27,8 @@ contract InstaDocHub {
     }
     
     HubRecord[] public allRecords;
-    mapping(address => uint256[]) public patientRecordIds; // patient -> record IDs
-    mapping(address => uint256[]) public doctorRecordIds;  // doctor -> record IDs
+    mapping(address => uint256[]) public patientRecordIds;
+    mapping(address => uint256[]) public doctorRecordIds;
 
     event PatientRegistered(address indexed patient);
     event PatientRemoved(address indexed patient);
@@ -49,11 +48,16 @@ contract InstaDocHub {
         address escrowAddr,
         address patientRecordsAddr
     ) {
+        // Set the deployer (your wallet) as admin
+        admin = msg.sender;
+        
+        // Initialize contract references
         doctorRegistry = DoctorRegistry(doctorRegistryAddr);
         consentRegistry = ConsentRegistry(consentRegistryAddr);
         escrow = EscrowPayments(escrowAddr);
         patientRecords = PatientRecords(patientRecordsAddr);
-        admin = msg.sender; // Set deployer as admin
+        
+        // No need to transfer admin - deployer wallet remains admin of everything
     }
 
     /// --- Patients ---
@@ -64,14 +68,12 @@ contract InstaDocHub {
         emit PatientRegistered(msg.sender);
     }
 
-    // Remove patient (admin function)
-    function removePatient(address patientAddr) external onlyAdmin { // Use onlyAdmin modifier
+    function removePatient(address patientAddr) external onlyAdmin {
         require(registeredPatients[patientAddr], "Patient not registered");
         registeredPatients[patientAddr] = false;
         emit PatientRemoved(patientAddr);
     }
 
-    // Get all registered patients
     function getAllPatients() external view returns (address[] memory) {
         address[] memory activePatients = new address[](patientAddresses.length);
         uint256 activeCount = 0;
@@ -83,7 +85,6 @@ contract InstaDocHub {
             }
         }
         
-        // Resize array to remove empty slots
         address[] memory result = new address[](activeCount);
         for (uint256 i = 0; i < activeCount; i++) {
             result[i] = activePatients[i];
@@ -92,7 +93,6 @@ contract InstaDocHub {
         return result;
     }
 
-    // Transfer hub admin
     function transferAdmin(address newAdmin) external onlyAdmin {
         require(newAdmin != address(0), "New admin is zero address");
         emit AdminTransferred(admin, newAdmin);
@@ -105,12 +105,14 @@ contract InstaDocHub {
         string calldata name,
         string calldata specialization,
         string calldata profileCID
-    ) external onlyAdmin { // Use onlyAdmin modifier
+    ) external onlyAdmin {
+        // Since DoctorRegistry admin is now InstaDocHub, we need to call it directly
+        // But we'll handle this in the deployment script
         doctorRegistry.registerDoctor(doctorAddr, name, specialization, profileCID);
         emit DoctorApproved(doctorAddr);
     }
 
-    function revokeDoctor(address doctorAddr) external onlyAdmin { // Use onlyAdmin modifier
+    function revokeDoctor(address doctorAddr) external onlyAdmin {
         doctorRegistry.revokeDoctor(doctorAddr);
         emit DoctorRevoked(doctorAddr);
     }
@@ -119,12 +121,10 @@ contract InstaDocHub {
         return doctorRegistry.isVerified(doctor);
     }
 
-    // Get all verified doctors through Hub
     function getAllVerifiedDoctors() external view returns (address[] memory) {
         return doctorRegistry.getAllVerifiedDoctors();
     }
 
-    // Get doctor details through Hub
     function getDoctorDetails(address doctorAddr) external view returns (
         string memory name,
         string memory specialization,
@@ -144,7 +144,6 @@ contract InstaDocHub {
         require(doctorRegistry.isVerified(msg.sender), "Doctor not verified");
         require(registeredPatients[patient], "Patient not registered");
 
-        // verify consent
         bool hasConsent = false;
         for (uint256 i = 0; i < consentRegistry.consentsLength(); i++) {
             ConsentRegistry.Consent memory c = consentRegistry.getConsent(i);
@@ -155,10 +154,8 @@ contract InstaDocHub {
         }
         require(hasConsent, "No Active Consent");
 
-        // pass the doctor address and the 'encrypted' flag
         patientRecords.addRecord(patient, msg.sender, description, recordCID, encrypted);
         
-        // Track record in hub
         uint256 recordId = allRecords.length;
         allRecords.push(HubRecord({
             patient: patient,
@@ -180,19 +177,17 @@ contract InstaDocHub {
         return patientRecords.getRecords(msg.sender);
     }
 
-    // Get all records (admin function)
     function getAllRecords() external view returns (HubRecord[] memory) {
         HubRecord[] memory activeRecords = new HubRecord[](allRecords.length);
         uint256 activeCount = 0;
         
         for (uint256 i = 0; i < allRecords.length; i++) {
-            if (registeredPatients[allRecords[i].patient]) { // Only include records for active patients
+            if (registeredPatients[allRecords[i].patient]) {
                 activeRecords[activeCount] = allRecords[i];
                 activeCount++;
             }
         }
         
-        // Resize array to remove empty slots
         HubRecord[] memory result = new HubRecord[](activeCount);
         for (uint256 i = 0; i < activeCount; i++) {
             result[i] = activeRecords[i];
@@ -201,12 +196,10 @@ contract InstaDocHub {
         return result;
     }
 
-    // Get records count for pagination
     function getRecordsCount() external view returns (uint256) {
         return allRecords.length;
     }
 
-    // Get records by range for pagination
     function getRecordsRange(uint256 start, uint256 end) external view returns (HubRecord[] memory) {
         require(start < end && end <= allRecords.length, "Invalid range");
         HubRecord[] memory result = new HubRecord[](end - start);
@@ -216,5 +209,10 @@ contract InstaDocHub {
         }
         
         return result;
+    }
+    
+    // Check if address is admin
+    function isAdmin(address addr) external view returns (bool) {
+        return addr == admin;
     }
 }

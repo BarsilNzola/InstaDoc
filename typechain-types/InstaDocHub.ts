@@ -91,6 +91,7 @@ export interface InstaDocHubInterface extends Interface {
       | "getDoctorDetails"
       | "getRecordsCount"
       | "getRecordsRange"
+      | "isAdmin"
       | "isDoctorVerified"
       | "patientAddresses"
       | "patientRecordIds"
@@ -162,6 +163,10 @@ export interface InstaDocHubInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getRecordsRange",
     values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isAdmin",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "isDoctorVerified",
@@ -251,6 +256,7 @@ export interface InstaDocHubInterface extends Interface {
     functionFragment: "getRecordsRange",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "isAdmin", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isDoctorVerified",
     data: BytesLike
@@ -501,6 +507,8 @@ export interface InstaDocHub extends BaseContract {
     "view"
   >;
 
+  isAdmin: TypedContractMethod<[addr: AddressLike], [boolean], "view">;
+
   isDoctorVerified: TypedContractMethod<
     [doctor: AddressLike],
     [boolean],
@@ -645,6 +653,9 @@ export interface InstaDocHub extends BaseContract {
     [InstaDocHub.HubRecordStructOutput[]],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "isAdmin"
+  ): TypedContractMethod<[addr: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "isDoctorVerified"
   ): TypedContractMethod<[doctor: AddressLike], [boolean], "view">;

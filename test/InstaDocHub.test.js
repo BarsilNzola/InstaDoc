@@ -35,11 +35,12 @@ describe("InstaDocHub - Enhanced Admin Functions", function () {
     await hub.waitForDeployment();
 
     // TRANSFER DOCTOR REGISTRY ADMIN TO HUB CONTRACT
+    // This allows InstaDocHub to manage doctors through its admin functions
     await doctorRegistry.connect(admin).transferAdmin(await hub.getAddress());
   });
 
   it("should deploy all contracts and work together", async function () {
-    // Register doctor through hub (Hub is now admin of DoctorRegistry)
+    // Register doctor through hub (admin calls hub, hub calls doctorRegistry)
     await hub.connect(admin).approveDoctor(doctor1.address, "Dr. Smith", "General", "cid1");
     await hub.connect(patient1).registerPatient();
 
@@ -191,9 +192,41 @@ describe("InstaDocHub - Enhanced Admin Functions", function () {
     ).to.be.revertedWith("Only Admin");
   });
 
+  // NEW TEST: Verify deployer is the admin of InstaDocHub
+  it("should have deployer as InstaDocHub admin", async function () {
+    const hubAdmin = await hub.admin();
+    expect(hubAdmin).to.equal(admin.address);
+  });
+
+  // NEW TEST: Verify isAdmin function works correctly
+  it("should correctly identify admin addresses", async function () {
+    expect(await hub.isAdmin(admin.address)).to.be.true;
+    expect(await hub.isAdmin(doctor1.address)).to.be.false;
+    expect(await hub.isAdmin(patient1.address)).to.be.false;
+  });
+
   // Verify DoctorRegistry admin was transferred correctly
   it("should have Hub as DoctorRegistry admin", async function () {
     const doctorRegistryAdmin = await doctorRegistry.admin();
     expect(doctorRegistryAdmin).to.equal(await hub.getAddress());
+  });
+
+  // NEW TEST: Verify admin can call all admin functions
+  it("should allow admin to perform all admin operations", async function () {
+    // Approve doctor
+    await hub.connect(admin).approveDoctor(doctor1.address, "Dr. Test", "Neurology", "cid_test");
+    expect(await hub.isDoctorVerified(doctor1.address)).to.be.true;
+
+    // Register patient
+    await hub.connect(patient1).registerPatient();
+    expect(await hub.registeredPatients(patient1.address)).to.be.true;
+
+    // Remove patient
+    await hub.connect(admin).removePatient(patient1.address);
+    expect(await hub.registeredPatients(patient1.address)).to.be.false;
+
+    // Revoke doctor
+    await hub.connect(admin).revokeDoctor(doctor1.address);
+    expect(await hub.isDoctorVerified(doctor1.address)).to.be.false;
   });
 });

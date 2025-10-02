@@ -5,38 +5,25 @@ import PatientDashboard from "./components/Patient/PatientDashboard";
 import DoctorDashboard from "./components/Doctor/DoctorDashboard";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import hubArtifact from "./abis/InstaDocHub.json";
-import doctorRegistryArtifact from "./abis/DoctorRegistry.json";
 
 function App() {
   const [role, setRole] = useState<"admin" | "doctor" | "patient" | null>(null);
   const [isPatientRegistered, setIsPatientRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [devAdminMode, setDevAdminMode] = useState(false);
   
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   
   const hubAddress = import.meta.env.VITE_HUB_ADDRESS;
   const hubAbi = hubArtifact.abi;
-  const doctorRegistryAbi = doctorRegistryArtifact.abi;
 
-  // Read doctorRegistry address from Hub
-  const { data: doctorRegistryAddr } = useReadContract({
+  // Check if user is the admin of InstaDocHub
+  const { data: hubAdmin } = useReadContract({
     address: hubAddress as `0x${string}`,
     abi: hubAbi,
-    functionName: "doctorRegistry",
-    query: {
-      enabled: !!hubAddress && isConnected && chainId === 2484,
-    },
-  });
-
-  // Read admin address from DoctorRegistry
-  const { data: adminAddr } = useReadContract({
-    address: doctorRegistryAddr as `0x${string}`,
-    abi: doctorRegistryAbi,
     functionName: "admin",
     query: {
-      enabled: !!doctorRegistryAddr && isConnected,
+      enabled: !!hubAddress && isConnected && chainId === 2484,
     },
   });
 
@@ -77,8 +64,8 @@ function App() {
 
     setLoading(true);
 
-    if (adminAddr !== undefined && isDoctor !== undefined && isRegisteredPatient !== undefined) {
-      if (address.toLowerCase() === (adminAddr as string)?.toLowerCase()) {
+    if (hubAdmin !== undefined && isDoctor !== undefined && isRegisteredPatient !== undefined) {
+      if (address.toLowerCase() === (hubAdmin as string)?.toLowerCase()) {
         setRole("admin");
       } else if (isDoctor) {
         setRole("doctor");
@@ -88,74 +75,7 @@ function App() {
       }
       setLoading(false);
     }
-  }, [isConnected, address, chainId, adminAddr, isDoctor, isRegisteredPatient]);
-
-  // Development Admin Access Component
-  const DevelopmentAdminAccess = () => {
-    const enableAdminMode = () => {
-      setDevAdminMode(true);
-    };
-
-    const disableAdminMode = () => {
-      setDevAdminMode(false);
-    };
-
-    if (devAdminMode) {
-      return (
-        <div>
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 rounded">
-            <div className="flex justify-between items-center">
-              <p className="text-green-800 font-semibold">
-                🛠️ Development Admin Mode Active
-              </p>
-              <button
-                onClick={disableAdminMode}
-                className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-              >
-                Exit Admin Mode
-              </button>
-            </div>
-            <p className="text-green-700 text-sm mt-1">
-              You can now test admin functions. Your actual wallet role: {role}
-            </p>
-          </div>
-          <AdminDashboard />
-        </div>
-      );
-    }
-
-    // Only show the development admin access if user is NOT actually an admin
-    if (role !== "admin") {
-      return (
-        <div className="mb-6 p-4 bg-orange-100 border border-orange-400 rounded">
-          <h3 className="text-lg font-semibold text-orange-800 mb-2">
-            Development Admin Access
-          </h3>
-          <p className="text-orange-700 mb-3">
-            Your wallet ({address}) is currently detected as: <strong>{role}</strong>
-            {role === "patient" && isPatientRegistered && " (registered)"}
-            {role === "patient" && !isPatientRegistered && " (not registered)"}
-          </p>
-          <p className="text-orange-700 mb-3">
-            Contract Admin: {adminAddr ? (adminAddr as string) : "Loading..."}
-          </p>
-          <div className="space-y-2">
-            <button
-              onClick={enableAdminMode}
-              className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 mr-2"
-            >
-              Enable Admin Mode (Development)
-            </button>
-            <p className="text-xs text-orange-600">
-              This allows you to test admin functions without being the actual contract admin.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
+  }, [isConnected, address, chainId, hubAdmin, isDoctor, isRegisteredPatient]);
 
   // Patient registration
   const { writeContract: registerPatient, isPending: isRegistering } = useWriteContract();
@@ -185,7 +105,10 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-800">
-        <p>Loading… ⏳</p>
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <p>Detecting your role...</p>
+        </div>
       </div>
     );
   }
@@ -196,7 +119,7 @@ function App() {
         <div>
           <h1 className="text-2xl font-bold">InstaDoc</h1>
           <p className="text-sm mt-1 max-w-md">
-            InstaDoc - Decentralized Telemedicine Platform
+            Decentralized Telemedicine Platform
           </p>
         </div>
         <ConnectWallet onConnect={() => {}} />
@@ -204,47 +127,42 @@ function App() {
 
       <main className="p-6">
         {!isConnected ? (
-          <div className="text-center">
+          <div className="text-center max-w-md mx-auto">
             <h2 className="text-xl font-semibold mb-4">Welcome to InstaDoc</h2>
-            <p className="mb-4">Please connect your wallet to continue.</p>
+            <p className="mb-4 text-gray-600">
+              Connect your wallet to access decentralized healthcare services
+            </p>
           </div>
         ) : chainId !== 2484 ? (
-          <div className="text-center">
-            <p>Please switch to U2U Testnet to continue.</p>
+          <div className="text-center max-w-md mx-auto p-4 border rounded bg-yellow-50 border-yellow-200">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Wrong Network</h3>
+            <p className="text-yellow-700">Please switch to U2U Nebulas Testnet to continue.</p>
           </div>
-        ) : devAdminMode ? (
-          // DEVELOPMENT ADMIN MODE - Highest priority
-          <DevelopmentAdminAccess />
         ) : role === "admin" ? (
-          // ACTUAL ADMIN
           <AdminDashboard />
         ) : role === "doctor" ? (
           <DoctorDashboard />
         ) : role === "patient" ? (
           !isPatientRegistered ? (
-            <div className="space-y-4 p-4 border rounded bg-white shadow max-w-md mx-auto">
+            <div className="space-y-4 p-6 border rounded bg-white shadow max-w-md mx-auto">
               <h3 className="text-xl font-semibold">Patient Registration</h3>
-              <p>Welcome! Please register to access your medical dashboard.</p>
+              <p className="text-gray-600">
+                Welcome! Register to access your medical dashboard and book appointments.
+              </p>
               <button
                 onClick={handlePatientRegistration}
                 disabled={isRegistering}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 transition-colors disabled:opacity-50 font-medium"
               >
                 {isRegistering ? "Registering..." : "Register as Patient"}
               </button>
             </div>
           ) : (
-            <div>
-              {/* Show development admin access above patient dashboard */}
-              <DevelopmentAdminAccess />
-              <PatientDashboard />
-            </div>
+            <PatientDashboard />
           )
         ) : (
           <div className="text-center">
-            <p>Detecting your role...</p>
-            {/* Show development admin access while detecting */}
-            <DevelopmentAdminAccess />
+            <p>Unable to detect your role. Please try refreshing the page.</p>
           </div>
         )}
       </main>
