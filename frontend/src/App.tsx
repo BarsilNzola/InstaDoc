@@ -104,39 +104,66 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-800">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <p>Detecting your role...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}>
+        <div className="flex items-center space-x-3">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#f4991a' }}></div>
+          <p className="text-lg font-medium">Detecting your role...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
-      <header className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-900 text-white space-y-2 md:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold">InstaDoc</h1>
-          <p className="text-sm mt-1 max-w-md">
-            Decentralized Telemedicine Platform
-          </p>
+    <div className="min-h-screen" style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}>
+      {/* Header */}
+      <header className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center" style={{ backgroundColor: '#344f1f' }}>
+        <div className="mb-4 md:mb-0">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f4991a' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">InstaDoc</h1>
+              <p className="text-sm mt-1 max-w-md opacity-90" style={{ color: '#f2ead3' }}>
+                Decentralized Telemedicine Platform
+              </p>
+            </div>
+          </div>
         </div>
-        <ConnectWallet onConnect={() => {}} />
+        
+        {/* Wallet Connection - Compact Version */}
+        <div className="w-full md:w-auto">
+          <ConnectWallet onConnect={() => {}} compact={true} />
+        </div>
       </header>
 
-      <main className="p-6">
+      {/* Main Content */}
+      <main className="p-6 max-w-7xl mx-auto">
         {!isConnected ? (
-          <div className="text-center max-w-md mx-auto">
-            <h2 className="text-xl font-semibold mb-4">Welcome to InstaDoc</h2>
-            <p className="mb-4 text-gray-600">
+          <div className="text-center max-w-md mx-auto py-12">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f2ead3' }}>
+              <svg className="w-10 h-10" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: '#344f1f' }}>Welcome to InstaDoc</h2>
+            <p className="mb-6 text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
               Connect your wallet to access decentralized healthcare services
             </p>
           </div>
         ) : chainId !== 2484 ? (
-          <div className="text-center max-w-md mx-auto p-4 border rounded bg-yellow-50 border-yellow-200">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Wrong Network</h3>
-            <p className="text-yellow-700">Please switch to U2U Nebulas Testnet to continue.</p>
+          <div className="text-center max-w-md mx-auto p-6 rounded-lg shadow-md" style={{ backgroundColor: '#f2ead3', border: '2px solid #f4991a' }}>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-yellow-100">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-3" style={{ color: '#344f1f' }}>Wrong Network</h3>
+            <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+              Please switch to U2U Nebulas Testnet to continue.
+            </p>
           </div>
         ) : role === "admin" ? (
           <AdminDashboard />
@@ -144,25 +171,61 @@ function App() {
           <DoctorDashboard />
         ) : role === "patient" ? (
           !isPatientRegistered ? (
-            <div className="space-y-4 p-6 border rounded bg-white shadow max-w-md mx-auto">
-              <h3 className="text-xl font-semibold">Patient Registration</h3>
-              <p className="text-gray-600">
-                Welcome! Register to access your medical dashboard and book appointments.
-              </p>
+            <div className="space-y-6 p-8 rounded-xl shadow-lg max-w-md mx-auto" style={{ backgroundColor: '#f2ead3' }}>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f9f5f0' }}>
+                  <svg className="w-8 h-8" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-3" style={{ color: '#344f1f' }}>Patient Registration</h3>
+                <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+                  Welcome! Register to access your medical dashboard and book appointments.
+                </p>
+              </div>
               <button
                 onClick={handlePatientRegistration}
                 disabled={isRegistering}
-                className="w-full bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 transition-colors disabled:opacity-50 font-medium"
+                className="w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ 
+                  backgroundColor: '#f4991a', 
+                  color: '#ffffff'
+                }}
+                onMouseOver={(e) => {
+                  if (!isRegistering) {
+                    e.currentTarget.style.backgroundColor = '#e08a17';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isRegistering) {
+                    e.currentTarget.style.backgroundColor = '#f4991a';
+                  }
+                }}
               >
-                {isRegistering ? "Registering..." : "Register as Patient"}
+                {isRegistering ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Registering...</span>
+                  </div>
+                ) : (
+                  "Register as Patient"
+                )}
               </button>
             </div>
           ) : (
             <PatientDashboard />
           )
         ) : (
-          <div className="text-center">
-            <p>Unable to detect your role. Please try refreshing the page.</p>
+          <div className="text-center py-12">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f2ead3' }}>
+              <svg className="w-10 h-10" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-3" style={{ color: '#344f1f' }}>Role Detection Issue</h3>
+            <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+              Unable to detect your role. Please try refreshing the page.
+            </p>
           </div>
         )}
       </main>

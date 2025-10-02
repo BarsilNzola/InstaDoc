@@ -360,10 +360,10 @@ export default function ApproveDoctors() {
 
   const getIpfsStatusColor = () => {
     switch (ipfsStatus) {
-      case "connected": return "bg-green-100 border-green-400 text-green-800";
-      case "error": return "bg-red-100 border-red-400 text-red-800";
-      case "testing": return "bg-yellow-100 border-yellow-400 text-yellow-800";
-      default: return "bg-gray-100 border-gray-400 text-gray-800";
+      case "connected": return { bg: '#f0f9f0', border: '#86efac', text: '#166534' };
+      case "error": return { bg: '#fef2f2', border: '#fca5a5', text: '#dc2626' };
+      case "testing": return { bg: '#fffbeb', border: '#fcd34d', text: '#d97706' };
+      default: return { bg: '#f9f5f0', border: '#d6d3d1', text: '#57534e' };
     }
   };
 
@@ -385,46 +385,134 @@ export default function ApproveDoctors() {
     }
   };
 
+  const ipfsStatusColors = getIpfsStatusColor();
+
   return (
     <div className="space-y-6">
       {/* Transaction Status */}
       {transactionStatus !== "idle" && (
-        <div className={`p-4 border rounded ${transactionStatus === "success" ? "bg-green-100 border-green-400 text-green-800" : transactionStatus === "error" ? "bg-red-100 border-red-400 text-red-800" : "bg-yellow-100 border-yellow-400 text-yellow-800"}`}>
+        <div 
+          className="p-4 border rounded-lg shadow-sm"
+          style={{
+            backgroundColor: transactionStatus === "success" ? '#f0f9f0' : 
+                           transactionStatus === "error" ? '#fef2f2' : '#fffbeb',
+            borderColor: transactionStatus === "success" ? '#86efac' : 
+                        transactionStatus === "error" ? '#fca5a5' : '#fcd34d',
+            color: transactionStatus === "success" ? '#166534' : 
+                  transactionStatus === "error" ? '#dc2626' : '#d97706'
+          }}
+        >
           <div className="flex justify-between items-center">
             <span className="font-semibold">{getTransactionStatusText()}</span>
-            <button onClick={() => setTransactionStatus('idle')} className="text-sm underline">Dismiss</button>
+            <button 
+              onClick={() => setTransactionStatus('idle')} 
+              className="text-sm underline hover:no-underline transition-all"
+            >
+              Dismiss
+            </button>
           </div>
-          {transactionStatus === "success" && <p className="text-sm mt-2">The list will update automatically. If revoked doctors still appear, click "Refresh List".</p>}
+          {transactionStatus === "success" && (
+            <p className="text-sm mt-2">
+              The list will update automatically. If revoked doctors still appear, click "Refresh List".
+            </p>
+          )}
         </div>
       )}
 
       {/* IPFS status */}
-      <div className={`p-4 border rounded ${getIpfsStatusColor()}`}>
+      <div 
+        className="p-4 border rounded-lg shadow-sm"
+        style={{
+          backgroundColor: ipfsStatusColors.bg,
+          borderColor: ipfsStatusColors.border,
+          color: ipfsStatusColors.text
+        }}
+      >
         <div className="flex justify-between items-center">
           <span className="font-semibold">{getIpfsStatusText()}</span>
-          <button onClick={async () => { setIpfsStatus('testing'); const ok = await testIPFSConnection(); setIpfsStatus(ok ? 'connected' : 'error'); }} className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Test Connection</button>
+          <button 
+            onClick={async () => { 
+              setIpfsStatus('testing'); 
+              const ok = await testIPFSConnection(); 
+              setIpfsStatus(ok ? 'connected' : 'error'); 
+            }} 
+            className="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 hover:shadow-md"
+            style={{ backgroundColor: '#f2ead3', color: '#344f1f' }}
+          >
+            Test Connection
+          </button>
         </div>
-        {ipfsStatus === "error" && <p className="text-sm mt-2">IPFS not available. Doctor profiles will be stored on-chain only.</p>}
+        {ipfsStatus === "error" && (
+          <p className="text-sm mt-2">IPFS not available. Doctor profiles will be stored on-chain only.</p>
+        )}
       </div>
 
-      {/* Register form (keeps your original fields) */}
-      <div className="p-6 border rounded bg-white shadow">
-        <h3 className="text-xl font-semibold mb-4">Register New Doctor</h3>
-        <div className="space-y-4">
+      {/* Register form */}
+      <div className="p-6 border rounded-xl shadow-md" style={{ backgroundColor: '#f2ead3' }}>
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f4991a' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Register New Doctor</h3>
+        </div>
+        
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-1">Doctor Wallet Address *</label>
-            <input type="text" value={doctorAddress} onChange={(e) => setDoctorAddress(e.target.value)} placeholder="0x..." className={`w-full p-2 border rounded font-mono ${isDoctorAlreadyApproved ? "border-red-500 bg-red-50" : ""}`} />
-            {isDoctorAlreadyApproved && <p className="text-red-600 text-sm mt-1">⚠️ This doctor is already approved!</p>}
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Doctor Wallet Address *
+            </label>
+            <input 
+              type="text" 
+              value={doctorAddress} 
+              onChange={(e) => setDoctorAddress(e.target.value)} 
+              placeholder="0x..." 
+              className={`w-full p-3 border rounded-lg font-mono transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                isDoctorAlreadyApproved ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
+              style={{ 
+                backgroundColor: '#f9f5f0',
+                borderColor: isDoctorAlreadyApproved ? '#ef4444' : '#d6d3d1'
+              }}
+            />
+            {isDoctorAlreadyApproved && (
+              <p className="text-red-600 text-sm mt-2 flex items-center space-x-1">
+                <span>⚠️</span>
+                <span>This doctor is already approved!</span>
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Doctor Name *</label>
-            <input type="text" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder="Dr. John Smith" className="w-full p-2 border rounded" />
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Doctor Name *
+            </label>
+            <input 
+              type="text" 
+              value={doctorName} 
+              onChange={(e) => setDoctorName(e.target.value)} 
+              placeholder="Dr. John Smith" 
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ backgroundColor: '#f9f5f0' }}
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Specialization *</label>
-            <select value={specialization} onChange={(e) => setSpecialization(e.target.value)} className="w-full p-2 border rounded">
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Specialization *
+            </label>
+            <select 
+              value={specialization} 
+              onChange={(e) => setSpecialization(e.target.value)} 
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50 appearance-none bg-no-repeat bg-right"
+              style={{ 
+                backgroundColor: '#f9f5f0',
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23344f1f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: 'right 0.75rem center',
+                backgroundSize: '1.5em 1.5em'
+              }}
+            >
               <option value="">Select specialization...</option>
               <option>Cardiology</option>
               <option>Pediatrics</option>
@@ -437,73 +525,191 @@ export default function ApproveDoctors() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Bio (Optional)</label>
-            <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} className="w-full p-2 border rounded" placeholder="Brief professional background..." />
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Bio (Optional)
+            </label>
+            <textarea 
+              rows={3} 
+              value={bio} 
+              onChange={(e) => setBio(e.target.value)} 
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-vertical"
+              style={{ backgroundColor: '#f9f5f0' }}
+              placeholder="Brief professional background..."
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Qualifications (Optional)</label>
-            <input type="text" value={qualifications} onChange={(e) => setQualifications(e.target.value)} placeholder="MD, PhD, Board Certified (comma separated)" className="w-full p-2 border rounded" />
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Qualifications (Optional)
+            </label>
+            <input 
+              type="text" 
+              value={qualifications} 
+              onChange={(e) => setQualifications(e.target.value)} 
+              placeholder="MD, PhD, Board Certified (comma separated)" 
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ backgroundColor: '#f9f5f0' }}
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Contact Info (Optional)</label>
-            <input type="text" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} placeholder="email@example.com or phone" className="w-full p-2 border rounded" />
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>
+              Contact Info (Optional)
+            </label>
+            <input 
+              type="text" 
+              value={contactInfo} 
+              onChange={(e) => setContactInfo(e.target.value)} 
+              placeholder="email@example.com or phone" 
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ backgroundColor: '#f9f5f0' }}
+            />
           </div>
 
-          <div className="flex space-x-4">
-            <button onClick={handleApproveDoctor} disabled={isApproveDisabled} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors disabled:opacity-50 flex-1">
-              {isSubmitting ? (uploading ? "Uploading Profile..." : isApproving ? "Approving..." : isConfirmingApprove ? "Confirming..." : "Processing...") : isDoctorAlreadyApproved ? "Already Approved" : "Approve Doctor"}
+          <div className="flex space-x-4 pt-4">
+            <button 
+              onClick={handleApproveDoctor} 
+              disabled={isApproveDisabled}
+              className="flex-1 py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              style={{ 
+                backgroundColor: isDoctorAlreadyApproved ? '#9ca3af' : '#f4991a', 
+                color: '#ffffff'
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>
+                    {uploading ? "Uploading Profile..." : 
+                     isApproving ? "Approving..." : 
+                     isConfirmingApprove ? "Confirming..." : "Processing..."}
+                  </span>
+                </>
+              ) : isDoctorAlreadyApproved ? (
+                "Already Approved"
+              ) : (
+                "Approve Doctor"
+              )}
             </button>
 
-            <button onClick={async () => { await refetchDoctors(); await refetchDoctorCheck(); }} disabled={isLoadingDoctors} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50">
-              {isLoadingDoctors ? "Refreshing..." : "Refresh List"}
+            <button 
+              onClick={async () => { await refetchDoctors(); await refetchDoctorCheck(); }} 
+              disabled={isLoadingDoctors}
+              className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-md disabled:opacity-50 flex items-center space-x-2"
+              style={{ backgroundColor: '#344f1f', color: '#ffffff' }}
+            >
+              {isLoadingDoctors ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Refreshing...</span>
+                </>
+              ) : (
+                "Refresh List"
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {/* Existing doctors list */}
-      <div className="p-6 border rounded bg-white shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Verified Doctors</h3>
-          <div className="flex items-center space-x-2">
-            {loadingProfiles && <span className="text-sm text-gray-500">Loading profiles...</span>}
-            <span className="bg-gray-100 px-2 py-1 rounded text-sm">{existingDoctors.length} doctor(s)</span>
+      <div className="p-6 border rounded-xl shadow-md" style={{ backgroundColor: '#f2ead3' }}>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#344f1f' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Verified Doctors</h3>
+          </div>
+          <div className="flex items-center space-x-3">
+            {loadingProfiles && (
+              <span className="text-sm flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: '#344f1f' }}></div>
+                <span style={{ color: '#344f1f', opacity: 0.8 }}>Loading profiles...</span>
+              </span>
+            )}
+            <span 
+              className="px-3 py-1 rounded-full text-sm font-semibold"
+              style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}
+            >
+              {existingDoctors.length} doctor(s)
+            </span>
           </div>
         </div>
 
         {existingDoctors.length > 0 ? (
           <div className="space-y-4">
             {existingDoctors.map((doc) => (
-              <div key={doc.address} className="border p-4 rounded hover:bg-gray-50">
+              <div 
+                key={doc.address} 
+                className="border p-6 rounded-xl transition-all duration-300 hover:shadow-md"
+                style={{ backgroundColor: '#f9f5f0', borderColor: '#d6d3d1' }}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2" />
-                      <h4 className="font-semibold text-lg">{doc.name}</h4>
+                    <div className="flex items-center mb-3">
+                      <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-3" />
+                      <h4 className="font-bold text-xl" style={{ color: '#344f1f' }}>{doc.name}</h4>
                     </div>
-                    <p className="text-gray-600 mb-1"><strong>Specialization:</strong> {doc.specialization}</p>
-                    {doc.bio && <p className="text-sm text-gray-700 mb-2">{doc.bio}</p>}
-                    {doc.qualifications && doc.qualifications.length > 0 && (
-                      <p className="text-sm text-gray-600 mb-1"><strong>Qualifications:</strong> {doc.qualifications.join(", ")}</p>
+                    <p className="mb-2 text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+                      <strong>Specialization:</strong> {doc.specialization}
+                    </p>
+                    {doc.bio && (
+                      <p className="mb-3 text-base" style={{ color: '#344f1f', opacity: 0.8 }}>
+                        {doc.bio}
+                      </p>
                     )}
-                    {doc.contactInfo && <p className="text-sm text-gray-600 mb-1"><strong>Contact:</strong> {doc.contactInfo}</p>}
-                    <p className="text-xs text-gray-500 font-mono mb-2">{doc.address}</p>
-                    {doc.profileCID && <p className="text-xs text-blue-600"><strong>IPFS CID:</strong> {doc.profileCID}</p>}
+                    {doc.qualifications && doc.qualifications.length > 0 && (
+                      <p className="mb-2 text-base" style={{ color: '#344f1f', opacity: 0.8 }}>
+                        <strong>Qualifications:</strong> {doc.qualifications.join(", ")}
+                      </p>
+                    )}
+                    {doc.contactInfo && (
+                      <p className="mb-2 text-base" style={{ color: '#344f1f', opacity: 0.8 }}>
+                        <strong>Contact:</strong> {doc.contactInfo}
+                      </p>
+                    )}
+                    <p className="text-sm font-mono mb-3" style={{ color: '#344f1f', opacity: 0.6 }}>
+                      {doc.address}
+                    </p>
+                    {doc.profileCID && (
+                      <p className="text-xs" style={{ color: '#f4991a' }}>
+                        <strong>IPFS CID:</strong> {doc.profileCID}
+                      </p>
+                    )}
                   </div>
 
-                  <button onClick={() => handleRevokeDoctor(doc.address)} disabled={isSubmitting} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 ml-4">
-                    {isRevoking || isConfirmingRevoke ? "Revoking..." : "Revoke"}
+                  <button 
+                    onClick={() => handleRevokeDoctor(doc.address)} 
+                    disabled={isSubmitting}
+                    className="ml-6 px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 flex items-center space-x-2"
+                    style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                  >
+                    {isRevoking || isConfirmingRevoke ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Revoking...</span>
+                      </>
+                    ) : (
+                      "Revoke"
+                    )}
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-2">No verified doctors yet.</p>
-            <p className="text-sm text-gray-500">Use the form above to register doctors. They will appear here once approved.</p>
+          <div className="text-center py-12">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f9f5f0' }}>
+              <svg className="w-10 h-10" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            </div>
+            <p className="text-xl mb-3" style={{ color: '#344f1f', opacity: 0.8 }}>No verified doctors yet.</p>
+            <p className="text-lg" style={{ color: '#344f1f', opacity: 0.6 }}>
+              Use the form above to register doctors. They will appear here once approved.
+            </p>
           </div>
         )}
       </div>

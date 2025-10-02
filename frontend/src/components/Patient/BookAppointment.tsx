@@ -224,27 +224,16 @@ export default function BookAppointment() {
     });
   };
 
-  // Debug info
-  const renderDebugInfo = () => {
-    if (!uniqueDoctorAddresses || uniqueDoctorAddresses.length === 0) {
-      return null;
-    }
-    
-    return (
-      <div className="text-xs text-gray-500 mt-2">
-        Found {uniqueDoctorAddresses.length} verified doctor(s) in contract
-        {doctors.length > 0 && `, loaded details for ${doctors.length}`}
-      </div>
-    );
-  };
+  const isSubmitting = isBooking || isConfirming;
+  const isFormDisabled = isSubmitting || !selectedDoctor;
 
   // Doctor selection
   const renderDoctorSelection = () => {
     if (loadingDoctors) {
       return (
-        <div className="flex items-center space-x-2 text-gray-600">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span>Loading verified doctors...</span>
+        <div className="flex items-center space-x-3" style={{ color: '#344f1f', opacity: 0.8 }}>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#344f1f' }}></div>
+          <span className="text-lg">Loading verified doctors...</span>
         </div>
       );
     }
@@ -252,9 +241,17 @@ export default function BookAppointment() {
     if (doctors.length === 0) {
       const hasAddresses = uniqueDoctorAddresses.length > 0;
       return (
-        <div className="text-yellow-600 bg-yellow-50 p-3 rounded">
-          <p>No verified doctors available yet.</p>
-          <p className="text-sm mt-1">
+        <div 
+          className="p-4 rounded-lg border"
+          style={{ backgroundColor: '#fffbeb', borderColor: '#fcd34d', color: '#d97706' }}
+        >
+          <div className="flex items-center space-x-2 mb-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <p className="font-semibold">No verified doctors available yet.</p>
+          </div>
+          <p className="text-sm">
             Doctors need to be approved through the admin panel first.
             {hasAddresses && (
               <span> Found {uniqueDoctorAddresses.length} doctor(s) in contract but couldn't load details.</span>
@@ -268,7 +265,13 @@ export default function BookAppointment() {
       <select
         value={selectedDoctor}
         onChange={(e) => setSelectedDoctor(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50 appearance-none bg-no-repeat bg-right"
+        style={{ 
+          backgroundColor: '#f9f5f0',
+          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23344f1f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+          backgroundPosition: 'right 0.75rem center',
+          backgroundSize: '1.5em 1.5em'
+        }}
       >
         <option value="">Choose a doctor...</option>
         {doctors.map((doctor) => (
@@ -289,15 +292,28 @@ export default function BookAppointment() {
     if (!doctor) return null;
 
     return (
-      <div className="bg-blue-50 p-3 rounded border border-blue-200">
-        <h4 className="font-semibold text-blue-800">{doctor.name}</h4>
-        <p className="text-sm text-blue-700">Specialization: {doctor.specialization}</p>
+      <div 
+        className="p-4 rounded-lg border transition-all duration-300"
+        style={{ backgroundColor: '#f0f9ff', borderColor: '#7dd3fc' }}
+      >
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0ea5e9' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="font-bold text-lg" style={{ color: '#0369a1' }}>{doctor.name}</h4>
+            <p className="text-sm" style={{ color: '#0369a1', opacity: 0.8 }}>{doctor.specialization}</p>
+          </div>
+        </div>
+        
         {doctor.bio && (
-          <p className="text-sm text-blue-600 mt-1">{doctor.bio}</p>
+          <p className="text-sm mb-2" style={{ color: '#0369a1', opacity: 0.8 }}>{doctor.bio}</p>
         )}
         {doctor.qualifications && doctor.qualifications.length > 0 && (
-          <p className="text-xs text-blue-500 mt-1">
-            Qualifications: {doctor.qualifications.join(', ')}
+          <p className="text-xs" style={{ color: '#0369a1', opacity: 0.7 }}>
+            <strong>Qualifications:</strong> {doctor.qualifications.join(', ')}
           </p>
         )}
       </div>
@@ -313,32 +329,67 @@ export default function BookAppointment() {
         {renderSelectedDoctorInfo()}
         
         <div>
-          <label className="block text-sm font-medium mb-2">Appointment Fee (U2U)</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            step="0.01"
-            min="0.01"
-            className="w-full p-2 border rounded"
-            placeholder="0.1"
-          />
+          <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>Appointment Fee (U2U)</label>
+          <div className="relative">
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="0.01"
+              className="w-full p-3 border border-gray-300 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-opacity-50 pr-12"
+              style={{ backgroundColor: '#f9f5f0' }}
+              placeholder="0.1"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <span className="text-sm font-semibold" style={{ color: '#344f1f', opacity: 0.7 }}>U2U</span>
+            </div>
+          </div>
+          <p className="text-sm mt-1" style={{ color: '#344f1f', opacity: 0.6 }}>
+            Minimum fee: 0.01 U2U
+          </p>
         </div>
 
         <button 
           onClick={handleBook} 
-          disabled={isBooking || isConfirming || !selectedDoctor}
-          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors disabled:opacity-50 w-full"
+          disabled={isFormDisabled}
+          className="w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3"
+          style={{ 
+            backgroundColor: isFormDisabled ? '#9ca3af' : '#f4991a', 
+            color: '#ffffff'
+          }}
         >
-          {isBooking ? "Confirming in wallet..." : 
-           isConfirming ? "Processing transaction..." : 
-           `Book Appointment - ${amount} U2U`}
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>
+                {isBooking ? "Confirming in wallet..." : "Processing transaction..."}
+              </span>
+            </>
+          ) : (
+            <>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Book Appointment - {amount} U2U</span>
+            </>
+          )}
         </button>
 
         {isConfirmed && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <p className="font-semibold">✅ Appointment booked successfully!</p>
-            <p className="text-sm mt-1">The doctor has been notified and will accept your appointment.</p>
+          <div 
+            className="p-4 rounded-lg border"
+            style={{ backgroundColor: '#f0f9f0', borderColor: '#86efac', color: '#166534' }}
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="font-semibold">Appointment booked successfully!</p>
+            </div>
+            <p className="text-sm mt-1">
+              The doctor has been notified and will accept your appointment.
+            </p>
           </div>
         )}
       </>
@@ -346,23 +397,51 @@ export default function BookAppointment() {
   };
 
   return (
-    <div className="space-y-6 p-6 border rounded bg-white shadow">
+    <div className="space-y-6 p-6 border rounded-xl shadow-md" style={{ backgroundColor: '#f2ead3' }}>
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold">Book Appointment</h3>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#344f1f' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Book Appointment</h3>
+        </div>
         <button
           onClick={() => refetchDoctors()}
           disabled={loadingDoctors}
-          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-md disabled:opacity-50 flex items-center space-x-2"
+          style={{ backgroundColor: '#344f1f', color: '#ffffff' }}
         >
-          {loadingDoctors ? "Refreshing..." : "Refresh Doctors"}
+          {loadingDoctors ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Refreshing...</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Refresh</span>
+            </>
+          )}
         </button>
       </div>
       
       {/* Doctor Selection */}
       <div>
-        <label className="block text-sm font-medium mb-2">Select Doctor</label>
+        <label className="block text-sm font-semibold mb-2" style={{ color: '#344f1f' }}>Select Doctor</label>
         {renderDoctorSelection()}
-        {renderDebugInfo()}
+        
+        {/* Doctor Count Info */}
+        {doctors.length > 0 && (
+          <div className="mt-2 flex items-center space-x-2">
+            <span className="text-sm" style={{ color: '#344f1f', opacity: 0.7 }}>
+              {doctors.length} verified doctor{doctors.length !== 1 ? 's' : ''} available
+            </span>
+          </div>
+        )}
       </div>
 
       {renderBookingForm()}

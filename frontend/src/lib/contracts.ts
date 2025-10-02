@@ -124,7 +124,7 @@ export async function confirmAppointment(appointmentId: bigint) {
   const result = await writeContract(config, {
     address: escrowAddress,
     abi: escrowAbi,
-    functionName: "confirmAppointment", // New function
+    functionName: "confirmAppointment",
     args: [appointmentId],
   });
   return result;

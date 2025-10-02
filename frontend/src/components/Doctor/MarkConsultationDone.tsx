@@ -35,19 +35,47 @@ export default function MarkConsultationDone({ appointmentId, onConsultationComp
   // Handle successful completion
   useEffect(() => {
     if (isConfirmed) {
-      alert("Consultation marked as completed and payment released!");
+      alert("✅ Consultation marked as completed and payment released!");
       onConsultationCompleted?.();
       setLoading(false);
     }
   }, [isConfirmed, onConsultationCompleted]);
 
+  const isSubmitting = loading || isWriting || isConfirming;
+
   return (
     <button 
       onClick={() => markDone(appointmentId)} 
-      disabled={loading || isWriting || isConfirming}
-      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors"
+      disabled={isSubmitting}
+      className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3"
+      style={{ 
+        backgroundColor: isSubmitting ? '#9ca3af' : '#f4991a', 
+        color: '#ffffff'
+      }}
+      onMouseOver={(e) => {
+        if (!isSubmitting) {
+          e.currentTarget.style.backgroundColor = '#e08a17';
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!isSubmitting) {
+          e.currentTarget.style.backgroundColor = '#f4991a';
+        }
+      }}
     >
-      {loading || isWriting || isConfirming ? "Processing..." : `Complete Consultation #${appointmentId}`}
+      {isSubmitting ? (
+        <>
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+          <span className="text-lg">Processing...</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-lg">Complete Consultation #{appointmentId}</span>
+        </>
+      )}
     </button>
   );
 }

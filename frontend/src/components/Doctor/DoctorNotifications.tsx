@@ -175,66 +175,150 @@ export default function DoctorNotifications() {
     }
   };
 
+  const isSubmitting = isConfirming || isConfirmingTx;
+
   if (!address) {
     return (
-      <div className="p-4 border rounded bg-yellow-50 border-yellow-200">
-        <p className="text-yellow-800">Please connect your wallet to see appointments</p>
+      <div 
+        className="p-4 border rounded-lg shadow-sm"
+        style={{
+          backgroundColor: '#fffbeb',
+          borderColor: '#fcd34d',
+          color: '#d97706'
+        }}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span>Please connect your wallet to see appointments</span>
+        </div>
       </div>
     );
   }
 
   if (!escrowAddress) {
     return (
-      <div className="p-4 border rounded bg-yellow-50 border-yellow-200">
-        <p className="text-yellow-800">Loading escrow contract...</p>
+      <div 
+        className="p-4 border rounded-lg shadow-sm"
+        style={{
+          backgroundColor: '#fffbeb',
+          borderColor: '#fcd34d',
+          color: '#d97706'
+        }}
+      >
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: '#d97706' }}></div>
+          <span>Loading escrow contract...</span>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="p-4 border rounded bg-white">
-        <h3 className="text-lg font-semibold mb-3">Appointment Notifications</h3>
-        <div className="flex items-center space-x-2 text-gray-600">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span>Loading appointments...</span>
+      <div className="p-6 border rounded-xl shadow-md" style={{ backgroundColor: '#f2ead3' }}>
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#344f1f' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Notifications</h3>
+        </div>
+        <div className="flex items-center space-x-3" style={{ color: '#344f1f', opacity: 0.8 }}>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#344f1f' }}></div>
+          <span className="text-lg">Loading appointments...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 border rounded bg-white shadow">
-      <h3 className="text-lg font-semibold mb-3">Appointment Notifications</h3>
+    <div className="p-6 border rounded-xl shadow-md" style={{ backgroundColor: '#f2ead3' }}>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#344f1f' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Notifications</h3>
+        </div>
+        <span 
+          className="px-4 py-2 rounded-full font-bold text-lg"
+          style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}
+        >
+          {appointments.length}
+        </span>
+      </div>
       
       {appointments.length === 0 ? (
-        <div className="text-gray-500 text-center py-4">
-          <p>No pending appointments</p>
-          <p className="text-sm mt-1">Patients will appear here when they book appointments with you</p>
+        <div className="text-center py-12">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f9f5f0' }}>
+            <svg className="w-10 h-10" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-xl mb-3" style={{ color: '#344f1f', opacity: 0.8 }}>No pending appointments</p>
+          <p className="text-lg" style={{ color: '#344f1f', opacity: 0.6 }}>
+            Patients will appear here when they book appointments with you
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {appointments.map((appointment) => (
-            <div key={appointment.id} className="border p-3 rounded bg-blue-50">
+            <div 
+              key={appointment.id} 
+              className="border p-6 rounded-xl transition-all duration-300 hover:shadow-md"
+              style={{ backgroundColor: '#f9f5f0', borderColor: '#d6d3d1' }}
+            >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h4 className="font-semibold">Appointment #{appointment.id}</h4>
-                  <p className="text-sm text-gray-600">
-                    Patient: {appointment.patient.slice(0, 8)}...{appointment.patient.slice(-6)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Amount: {(Number(appointment.amount) / 1e18).toFixed(4)} U2U
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Status: <span className="text-orange-600">{getStatusText(appointment.status)}</span>
-                  </p>
+                  <div className="flex items-center space-x-3 mb-3">
+                    <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+                    <h4 className="font-bold text-xl" style={{ color: '#344f1f' }}>
+                      Appointment #{appointment.id}
+                    </h4>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+                      <strong>Patient:</strong> {appointment.patient.slice(0, 8)}...{appointment.patient.slice(-6)}
+                    </p>
+                    <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+                      <strong>Amount:</strong> {(Number(appointment.amount) / 1e18).toFixed(4)} U2U
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold" style={{ color: '#344f1f', opacity: 0.8 }}>Status:</span>
+                      <span 
+                        className="px-3 py-1 rounded-full text-sm font-semibold"
+                        style={{ backgroundColor: '#fffbeb', color: '#d97706' }}
+                      >
+                        {getStatusText(appointment.status)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleConfirmAppointment(appointment.id)}
-                  disabled={isConfirming || isConfirmingTx}
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors ml-3 disabled:opacity-50"
+                  disabled={isSubmitting}
+                  className="ml-6 px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 flex items-center space-x-2"
+                  style={{ backgroundColor: '#f4991a', color: '#ffffff' }}
                 >
-                  {isConfirming ? "Confirming..." : isConfirmingTx ? "Processing..." : "Confirm"}
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Confirming...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Confirm</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -242,8 +326,18 @@ export default function DoctorNotifications() {
         </div>
       )}
       
-      <div className="mt-3 text-xs text-gray-500">
-        Found {appointments.length} pending appointment(s)
+      <div 
+        className="mt-6 p-4 border rounded-lg"
+        style={{ backgroundColor: '#f9f5f0', borderColor: '#d6d3d1' }}
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-lg font-semibold" style={{ color: '#344f1f' }}>
+            Pending Appointments
+          </p>
+          <span className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
+            {appointments.length} appointment{appointments.length !== 1 ? 's' : ''} waiting for confirmation
+          </span>
+        </div>
       </div>
     </div>
   );
