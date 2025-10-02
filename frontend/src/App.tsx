@@ -116,25 +116,23 @@ function App() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}>
       {/* Header */}
-      <header className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center" style={{ backgroundColor: '#344f1f' }}>
-        <div className="mb-4 md:mb-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f4991a' }}>
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">InstaDoc</h1>
-              <p className="text-sm mt-1 max-w-md opacity-90" style={{ color: '#f2ead3' }}>
-                Decentralized Telemedicine Platform
-              </p>
-            </div>
+      <header className="p-6 flex justify-between items-center" style={{ backgroundColor: '#344f1f' }}>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f4991a' }}>
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">InstaDoc</h1>
+            <p className="text-sm mt-1 opacity-90" style={{ color: '#f2ead3' }}>
+              Decentralized Telemedicine Platform
+            </p>
           </div>
         </div>
         
         {/* Wallet Connection - Compact Version */}
-        <div className="w-full md:w-auto">
+        <div className="flex-shrink-0">
           <ConnectWallet onConnect={() => {}} compact={true} />
         </div>
       </header>
