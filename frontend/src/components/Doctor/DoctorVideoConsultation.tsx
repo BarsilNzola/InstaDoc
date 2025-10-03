@@ -4,6 +4,7 @@ import { readContract } from "wagmi/actions";
 import { config } from "../Shared/wallet";
 import hubArtifact from "../../abis/InstaDocHub.json";
 import escrowArtifact from "../../abis/EscrowPayments.json";
+import VideoCall from "../Shared/VideoCall";
 
 interface Consultation {
   id: number;
@@ -13,7 +14,12 @@ interface Consultation {
   status: number;
 }
 
-export default function DoctorVideoConsultation() {
+interface DoctorVideoConsultationProps {
+  refreshTrigger?: number;
+  onRefresh?: () => void;
+}
+
+export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh }: DoctorVideoConsultationProps) {
   const [activeConsultations, setActiveConsultations] = useState<Consultation[]>([]);
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +51,7 @@ export default function DoctorVideoConsultation() {
     hash: txHash,
   });
 
-  // Fetch CONFIRMED appointments for video consultation
+  // Fetch CONFIRMED appointments for video consultation - ADD refreshTrigger TO DEPENDENCIES
   useEffect(() => {
     const fetchConsultations = async () => {
       if (!address || !nextAppointmentId || !escrowAddress) {
@@ -87,7 +93,7 @@ export default function DoctorVideoConsultation() {
     };
 
     fetchConsultations();
-  }, [address, nextAppointmentId, escrowAddress]);
+  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]); // ADDED refreshTrigger HERE
 
   const getAppointmentDetails = async (appointmentId: number): Promise<any> => {
     if (!escrowAddress) {
@@ -146,15 +152,17 @@ export default function DoctorVideoConsultation() {
     }
   };
 
-  // Remove completed appointment after confirmation
+  // Remove completed appointment after confirmation AND TRIGGER REFRESH
   useEffect(() => {
     if (isCompleted) {
       alert("✅ Appointment completed! Payment has been released to you.");
       // Remove the completed appointment from the list
       setActiveConsultations(prev => prev.filter(apt => apt.id !== Number(txHash)));
       setSelectedConsultation(null);
+      // Trigger parent refresh to update other components
+      onRefresh?.();
     }
-  }, [isCompleted, txHash]);
+  }, [isCompleted, txHash, onRefresh]);
 
   const startVideoCall = (consultation: Consultation) => {
     setSelectedConsultation(consultation);
@@ -260,87 +268,38 @@ export default function DoctorVideoConsultation() {
       
       {selectedConsultation ? (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h4 className="text-xl font-bold mb-2" style={{ color: '#344f1f' }}>
-                Consultation with Patient {selectedConsultation.patient.slice(0, 8)}...
-              </h4>
-              <p className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
-                ID: #{selectedConsultation.id} • {(Number(selectedConsultation.amount) / 1e18).toFixed(4)} U2U
-              </p>
-            </div>
-            <button
-              onClick={endVideoCall}
-              className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg flex items-center space-x-2"
-              style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+          <VideoCall
+            consultationId={selectedConsultation.id}
+            patientAddress={selectedConsultation.patient}
+            doctorAddress={address || ''}
+            isDoctor={true}
+            onEndCall={endVideoCall}
+          />
+          
+          {/* Completion Button */}
+          <div className="flex justify-center">
+            <button 
+              onClick={() => handleCompleteAppointment(selectedConsultation.id)}
+              disabled={isSubmitting}
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 flex items-center space-x-3"
+              style={{ backgroundColor: '#f4991a', color: '#ffffff' }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>End Call</span>
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                  <span>Processing Payment...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Complete Consultation & Receive Payment</span>
+                </>
+              )}
             </button>
           </div>
-          
-          {/* Video Call Interface */}
-          <div 
-            className="rounded-xl p-8 min-h-[500px] flex flex-col items-center justify-center relative overflow-hidden"
-            style={{ backgroundColor: '#1f2937' }}
-          >
-            <div className="absolute top-4 left-4 flex items-center space-x-2">
-              <span className="inline-block w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
-              <span className="text-white text-sm font-medium">LIVE</span>
-            </div>
-            
-            <div className="text-white text-center">
-              <div className="text-4xl mb-6">🎥</div>
-              <div className="text-2xl font-bold mb-4">Video Consultation Active</div>
-              <div className="space-y-2 text-lg" style={{ color: '#d1d5db' }}>
-                <p>Consultation ID: #{selectedConsultation.id}</p>
-                <p>Patient: {selectedConsultation.patient.slice(0, 8)}...{selectedConsultation.patient.slice(-6)}</p>
-                <p>Amount: {(Number(selectedConsultation.amount) / 1e18).toFixed(4)} U2U</p>
-                <p className="text-green-400 font-semibold mt-4">
-                  Status: {getStatusText(selectedConsultation.status)}
-                </p>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-4 justify-center">
-                <button className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg flex items-center space-x-2"
-                  style={{ backgroundColor: '#344f1f', color: '#ffffff' }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                  <span>Mute</span>
-                </button>
-                <button className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg flex items-center space-x-2"
-                  style={{ backgroundColor: '#344f1f', color: '#ffffff' }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span>Video Off</span>
-                </button>
-                <button 
-                  onClick={() => handleCompleteAppointment(selectedConsultation.id)}
-                  disabled={isSubmitting}
-                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg disabled:opacity-50 flex items-center space-x-2"
-                  style={{ backgroundColor: '#f4991a', color: '#ffffff' }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>Complete Consultation</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          
+
           {/* Consultation Notes */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold" style={{ color: '#344f1f' }}>Consultation Notes</label>

@@ -1,8 +1,15 @@
+import { useState } from "react";
 import DoctorNotifications from "./DoctorNotifications";
 import DoctorVideoConsultation from "./DoctorVideoConsultation";
 import UploadRecord from "./UploadRecord";
 
 export default function DoctorDashboard() {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
 	return (
 		<div className="space-y-8 p-6 max-w-7xl mx-auto">
 			{/* Header Section */}
@@ -25,8 +32,8 @@ export default function DoctorDashboard() {
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 				{/* Left Column - Appointments & Notifications */}
 				<div className="space-y-8">
-					<DoctorNotifications />
-					<DoctorVideoConsultation />
+					<DoctorNotifications refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />
+					<DoctorVideoConsultation refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />
 				</div>
 
 				{/* Right Column - Record Management */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount, useChainId, useWriteContract, useReadContract } from "wagmi";
+import { useAccount, useChainId, useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
 import ConnectWallet from "./components/Shared/ConnectWallet";
 import PatientDashboard from "./components/Patient/PatientDashboard";
 import DoctorDashboard from "./components/Doctor/DoctorDashboard";
@@ -10,6 +10,7 @@ function App() {
   const [role, setRole] = useState<"admin" | "doctor" | "patient" | null>(null);
   const [isPatientRegistered, setIsPatientRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -75,10 +76,26 @@ function App() {
       }
       setLoading(false);
     }
-  }, [isConnected, address, chainId, hubAdmin, isDoctor, isRegisteredPatient]);
+  }, [isConnected, address, chainId, hubAdmin, isDoctor, isRegisteredPatient, refreshTrigger]);
 
   // Patient registration
-  const { writeContract: registerPatient, isPending: isRegistering } = useWriteContract();
+  const { 
+    writeContract: registerPatient, 
+    isPending: isRegistering,
+    data: txHash 
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Refresh data when registration is confirmed
+  useEffect(() => {
+    if (isConfirmed) {
+      console.log("Registration confirmed, refreshing data...");
+      setRefreshTrigger(prev => prev + 1);
+    }
+  }, [isConfirmed]);
 
   const handlePatientRegistration = async () => {
     if (!hubAddress) {
@@ -93,7 +110,6 @@ function App() {
     }, {
       onSuccess: (txHash) => {
         console.log("Transaction submitted:", txHash);
-        alert("✅ Registration transaction submitted! Waiting for confirmation...");
       },
       onError: (error) => {
         console.error("Registration failed:", error);
@@ -181,34 +197,38 @@ function App() {
                   Welcome! Register to access your medical dashboard and book appointments.
                 </p>
               </div>
-              <button
-                onClick={handlePatientRegistration}
-                disabled={isRegistering}
-                className="w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ 
-                  backgroundColor: '#f4991a', 
-                  color: '#ffffff'
-                }}
-                onMouseOver={(e) => {
-                  if (!isRegistering) {
-                    e.currentTarget.style.backgroundColor = '#e08a17';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isRegistering) {
-                    e.currentTarget.style.backgroundColor = '#f4991a';
-                  }
-                }}
-              >
-                {isRegistering ? (
+              
+              {isConfirmed ? (
+                <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f0f9f0', border: '1px solid #86efac', color: '#166534' }}>
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Registering...</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium">✅ Successfully registered! Loading dashboard...</span>
                   </div>
-                ) : (
-                  "Register as Patient"
-                )}
-              </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePatientRegistration}
+                  disabled={isRegistering || isConfirming}
+                  className="w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-3"
+                  style={{ 
+                    backgroundColor: (isRegistering || isConfirming) ? '#9ca3af' : '#f4991a', 
+                    color: '#ffffff'
+                  }}
+                >
+                  {(isRegistering || isConfirming) ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>
+                        {isRegistering ? "Confirming in Wallet..." : "Waiting for Confirmation..."}
+                      </span>
+                    </>
+                  ) : (
+                    "Register as Patient"
+                  )}
+                </button>
+              )}
             </div>
           ) : (
             <PatientDashboard />

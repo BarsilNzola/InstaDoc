@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useReadContract, useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { readContract } from "wagmi/actions";
-import escrowArtifact from "../../abis/EscrowPayments.json";
-import hubArtifact from "../../abis/InstaDocHub.json";
 import { config } from "../Shared/wallet";
+import hubArtifact from "../../abis/InstaDocHub.json";
+import escrowArtifact from "../../abis/EscrowPayments.json";
 
 interface Appointment {
   id: number;
@@ -13,26 +13,23 @@ interface Appointment {
   status: number;
 }
 
-// The contract returns a tuple, not an object with named properties
-type ContractAppointment = [
-  patient: `0x${string}`,
-  doctor: `0x${string}`,
-  amount: bigint,
-  status: number
-];
+interface DoctorNotificationsProps {
+  refreshTrigger?: number;
+  onRefresh?: () => void;
+}
 
-export default function DoctorNotifications() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: DoctorNotificationsProps) {
+  const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { address } = useAccount();
   
-  const hubAddress = import.meta.env.VITE_HUB_ADDRESS;
+  const hubAddress = import.meta.env.VITE_HUB_ADDRESS as `0x${string}`;
   const hubAbi = hubArtifact.abi;
   const escrowAbi = escrowArtifact.abi;
 
   // Get escrow address from Hub contract
   const { data: escrowAddress } = useReadContract({
-    address: hubAddress as `0x${string}`,
+    address: hubAddress,
     abi: hubAbi,
     functionName: "escrow",
   });
@@ -48,11 +45,11 @@ export default function DoctorNotifications() {
   });
 
   const { writeContract: confirmAppointment, data: txHash, isPending: isConfirming } = useWriteContract();
-  const { isLoading: isConfirmingTx, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const { isLoading: isWaiting, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash: txHash,
   });
 
-  // Fetch all appointments and filter for this doctor
+  // Fetch PENDING appointments - ADD refreshTrigger TO DEPENDENCIES
   useEffect(() => {
     const fetchAppointments = async () => {
       if (!address || !nextAppointmentId || !escrowAddress) {
@@ -62,26 +59,30 @@ export default function DoctorNotifications() {
 
       try {
         const totalAppointments = Number(nextAppointmentId);
-        console.log(`🔄 Fetching ${totalAppointments} appointments for doctor ${address}`);
-        
-        const doctorAppointments: Appointment[] = [];
+        const appointments: Appointment[] = [];
 
         for (let i = 0; i < totalAppointments; i++) {
           try {
             const appointmentData = await getAppointmentDetails(i);
             
+            // Show appointments that are PENDING (status 0) for this doctor
             if (appointmentData && 
                 appointmentData.doctor.toLowerCase() === address.toLowerCase() && 
-                appointmentData.status === 0) { // Status 0 = Pending
-              doctorAppointments.push(appointmentData);
+                appointmentData.status === 0) {
+              appointments.push({
+                id: i,
+                patient: appointmentData.patient,
+                doctor: appointmentData.doctor,
+                amount: appointmentData.amount,
+                status: appointmentData.status
+              });
             }
           } catch (error) {
             console.error(`Error fetching appointment ${i}:`, error);
           }
         }
 
-        console.log(`✅ Found ${doctorAppointments.length} pending appointments`);
-        setAppointments(doctorAppointments);
+        setPendingAppointments(appointments);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       } finally {
@@ -90,17 +91,15 @@ export default function DoctorNotifications() {
     };
 
     fetchAppointments();
-  }, [address, nextAppointmentId, escrowAddress]);
+  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]); // refreshTrigger
 
-  const getAppointmentDetails = async (appointmentId: number): Promise<Appointment | null> => {
+  const getAppointmentDetails = async (appointmentId: number): Promise<any> => {
     if (!escrowAddress) {
       console.error("Escrow address not available");
       return null;
     }
 
     try {
-      console.log(`📋 Fetching appointment ${appointmentId} from escrow: ${escrowAddress}`);
-      
       const appointment = await readContract(config, {
         address: escrowAddress as `0x${string}`,
         abi: escrowAbi,
@@ -108,17 +107,15 @@ export default function DoctorNotifications() {
         args: [BigInt(appointmentId)],
       });
 
-      console.log(`✅ Appointment ${appointmentId} data:`, appointment);
-
       // The contract returns a tuple: [patient, doctor, amount, status]
-      const contractAppointment = appointment as ContractAppointment;
+      const [patient, doctor, amount, status] = appointment as [`0x${string}`, `0x${string}`, bigint, number];
       
       return {
         id: appointmentId,
-        patient: contractAppointment[0], // patient is at index 0
-        doctor: contractAppointment[1],  // doctor is at index 1
-        amount: contractAppointment[2].toString(), // amount is at index 2
-        status: contractAppointment[3]   // status is at index 3
+        patient,
+        doctor,
+        amount: amount.toString(),
+        status
       };
     } catch (error) {
       console.error(`Error getting appointment ${appointmentId}:`, error);
@@ -153,19 +150,20 @@ export default function DoctorNotifications() {
     }
   };
 
-  // Remove confirmed appointment after confirmation
+  // Remove confirmed appointment after confirmation AND TRIGGER REFRESH
   useEffect(() => {
     if (isConfirmed) {
-      alert("✅ Appointment confirmed! The patient can now see it in their consultations.");
+      alert("✅ Appointment confirmed! It will now appear in Video Consultations.");
       // Remove the confirmed appointment from the list
-      setAppointments(prev => prev.filter(apt => apt.id !== Number(txHash)));
-      setLoading(false);
+      setPendingAppointments(prev => prev.filter(apt => apt.id !== Number(txHash)));
+      // Trigger parent refresh to update other components
+      onRefresh?.();
     }
-  }, [isConfirmed, txHash]);
+  }, [isConfirmed, txHash, onRefresh]);
 
   const getStatusText = (status: number) => {
     switch (status) {
-      case 0: return "Pending Confirmation";
+      case 0: return "Pending";
       case 1: return "Confirmed";
       case 2: return "Completed";
       case 3: return "Cancelled by Patient";
@@ -175,7 +173,7 @@ export default function DoctorNotifications() {
     }
   };
 
-  const isSubmitting = isConfirming || isConfirmingTx;
+  const isSubmitting = isConfirming || isWaiting;
 
   if (!address) {
     return (
@@ -191,7 +189,7 @@ export default function DoctorNotifications() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <span>Please connect your wallet to see appointments</span>
+          <span>Please connect your wallet to view appointments</span>
         </div>
       </div>
     );
@@ -224,7 +222,7 @@ export default function DoctorNotifications() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
           </div>
-          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Notifications</h3>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Requests</h3>
         </div>
         <div className="flex items-center space-x-3" style={{ color: '#344f1f', opacity: 0.8 }}>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#344f1f' }}></div>
@@ -243,31 +241,31 @@ export default function DoctorNotifications() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
           </div>
-          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Notifications</h3>
+          <h3 className="text-2xl font-bold" style={{ color: '#344f1f' }}>Appointment Requests</h3>
         </div>
         <span 
           className="px-4 py-2 rounded-full font-bold text-lg"
           style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}
         >
-          {appointments.length}
+          {pendingAppointments.length}
         </span>
       </div>
       
-      {appointments.length === 0 ? (
+      {pendingAppointments.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f9f5f0' }}>
             <svg className="w-10 h-10" style={{ color: '#f4991a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
           <p className="text-xl mb-3" style={{ color: '#344f1f', opacity: 0.8 }}>No pending appointments</p>
           <p className="text-lg" style={{ color: '#344f1f', opacity: 0.6 }}>
-            Patients will appear here when they book appointments with you
+            New appointment requests from patients will appear here
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {appointments.map((appointment) => (
+          {pendingAppointments.map((appointment) => (
             <div 
               key={appointment.id} 
               className="border p-6 rounded-xl transition-all duration-300 hover:shadow-md"
@@ -276,7 +274,7 @@ export default function DoctorNotifications() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <span className="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+                    <span className="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
                     <h4 className="font-bold text-xl" style={{ color: '#344f1f' }}>
                       Appointment #{appointment.id}
                     </h4>
@@ -308,7 +306,7 @@ export default function DoctorNotifications() {
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       <span>Confirming...</span>
                     </>
                   ) : (
@@ -332,10 +330,10 @@ export default function DoctorNotifications() {
       >
         <div className="flex items-center justify-between">
           <p className="text-lg font-semibold" style={{ color: '#344f1f' }}>
-            Pending Appointments
+            Pending Requests
           </p>
           <span className="text-lg" style={{ color: '#344f1f', opacity: 0.8 }}>
-            {appointments.length} appointment{appointments.length !== 1 ? 's' : ''} waiting for confirmation
+            {pendingAppointments.length} request{pendingAppointments.length !== 1 ? 's' : ''} awaiting confirmation
           </span>
         </div>
       </div>
