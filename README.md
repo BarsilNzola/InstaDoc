@@ -1,58 +1,222 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# InstaDoc - Decentralized Telemedicine Platform
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+## 🩺 Overview
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+InstaDoc is a revolutionary decentralized telemedicine platform that leverages blockchain technology to create a secure, transparent, and borderless healthcare ecosystem. Our platform connects patients and doctors directly, eliminating intermediaries while ensuring trustless payments and immutable medical records.
 
-## Project Overview
+## 🚀 Key Features
 
-This example project includes:
+### 🔐 Secure & Decentralized
+- **Blockchain-Powered Escrow**: Secure payment handling with smart contract escrow
+- **Patient-Owned Data**: Medical records stored on decentralized storage (Lighthouse)
+- **Transparent Transactions**: All payments and interactions recorded on-chain
+- **Wallet Authentication**: Secure login via Web3 wallets (MetaMask, WalletConnect)
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+### 💰 Trustless Payments
+- **Automated Escrow System**: Funds held securely until consultation completion
+- **Instant Payouts**: Doctors receive U2U tokens automatically after consultations
+- **Cancellation Protection**: Fair refund system for cancelled appointments
+- **Dispute Resolution**: Admin-mediated dispute handling for edge cases
 
-## Usage
+### 🎥 Video Consultations
+- **WebRTC Ready**: Video call interface prepared for real-time communication
+- **Secure Communications**: Encrypted peer-to-peer video calls
+- **Cross-Platform**: Works on desktop and mobile browsers
+- **Demo Mode**: Local camera functionality with WebRTC integration notes
 
-### Running Tests
+### 📊 Role-Based Dashboard
+- **Patient Dashboard**: Book appointments, manage records, join video calls
+- **Doctor Dashboard**: Manage appointments, conduct consultations, receive payments
+- **Admin Dashboard**: Platform oversight and dispute resolution
 
-To run all the tests in the project, execute the following command:
+## 🏗️ Architecture
 
-```shell
-npx hardhat test
-```
+### Smart Contracts
+InstaDocHub (Main Contract)
+├── Patient Registration
+├── Doctor Verification
+├── Platform Administration
+└── Escrow Contract Integration
 
-You can also selectively run the Solidity or `mocha` tests:
+EscrowPayments (Payment Contract)
+├── Appointment Booking
+├── Payment Escrow
+├── Automatic Payouts
+├── Cancellation Handling
+└── Dispute Resolution
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
 
-### Make a deployment to Sepolia
+### Technology Stack
+- **Frontend**: React.js + TypeScript + Tailwind CSS
+- **Blockchain**: U2U Nebulas Network
+- **Smart Contracts**: Solidity
+- **Wallet Integration**: Wagmi + Viem
+- **Storage**: Lighthouse (Decentralized File Storage)
+- **Video**: WebRTC (Ready for Integration)
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+## 📦 Installation & Setup
 
-To run the deployment to a local chain:
+### Prerequisites
+- Node.js 16+ 
+- npm or yarn
+- MetaMask or compatible Web3 wallet
+- U2U Nebulas Testnet configuration
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+### Environment Setup
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/instadoc.git
+cd instadoc/frontend
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+2. Install dependencies:
+npm install
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+3. Set up environment variables:
+VITE_HUB_ADDRESS=your_deployed_hub_contract_address
+VITE_LIGHTHOUSE_API_KEY=your_lighthouse_storage_api_key
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+4. Start the development server:
+npm run dev
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
+### Smart Contract Deployment
+1. Navigate to the contracts directory:
+cd contracts
 
-After setting the variable, you can run the deployment with the Sepolia network:
+2. Install Hardhat dependencies:
+npm install
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
-# InstaDoc
+3. Deploy to U2U Nebulas Testnet:
+npx hardhat run scripts/deploy.js --network u2uTestnet
+
+## 🎯 Usage Guide
+
+### For Patients
+- Connect Wallet: Link your Web3 wallet to the platform
+
+- Register: Complete one-time patient registration (on-chain)
+
+- Find Doctors: Browse verified healthcare providers
+
+- Book Appointment: Select time and deposit consultation fee
+
+- Join Consultation: Access video call at scheduled time
+
+- Complete Session: Confirm consultation completion to release payment
+
+### For Doctors
+- Connect Wallet: Link your professional wallet
+
+- Get Verified: Submit credentials for platform verification
+
+- Manage Appointments: View and confirm incoming consultation requests
+
+- Conduct Consultations: Start video calls with patients
+
+- Receive Payments: Automatic U2U token transfers upon completion
+
+- Upload Records: Securely store consultation notes and prescriptions
+
+## Payment Flow
+Patient Books Appointment 
+    ↓
+Funds Locked in Escrow
+    ↓
+Doctor Confirms Appointment
+    ↓
+Video Consultation Occurs
+    ↓
+Either Party Completes Session
+    ↓
+Automatic Payment to Doctor
+    ↓
+Consultation Record Stored
+
+## 🔧 Technical Implementation Notes
+
+### Video Consultation Status
+✅ Local Camera Feed: Functional with mute/video controls
+
+✅ UI Framework: Professional medical consultation interface
+
+🔄 WebRTC Integration: Architecture ready, requires signaling server implementation
+
+📝 Integration Notes: Real-time video communication can be added with WebSocket signaling
+
+### Storage Implementation
+✅ Lighthouse Integration: Decentralized medical record storage
+
+✅ Encrypted Uploads: Secure file handling with access control
+
+✅ IPFS Backed: Permanent, resilient storage solution
+
+### Blockchain Features
+✅ U2U Nebulas Integration: Full testnet deployment
+
+✅ Gas Optimization: Efficient contract operations
+
+✅ Event Logging: Comprehensive on-chain activity tracking
+
+## 🚨 Important Notes
+
+### Payment Processing
+Note: Payments to doctors are automatically processed but may take 30-60 seconds due to blockchain confirmation times. This is normal behavior and not a platform issue.
+
+### Video Consultation
+Current State: The platform includes a complete video consultation interface with local camera functionality. Full peer-to-peer WebRTC implementation requires additional signaling server setup.
+
+### Storage Security
+Medical records are encrypted and stored on Lighthouse decentralized storage, ensuring patient privacy and data ownership while maintaining accessibility.
+
+## 🛠️ Development Roadmap
+
+### Completed Features
+- Smart contract development and testing
+
+- Frontend application with responsive design
+
+- Wallet integration and authentication
+
+- Patient and doctor registration
+
+- Appointment booking system
+
+- Escrow payment handling
+
+- Video consultation interface
+
+- Medical record storage
+
+- U2U testnet deployment
+
+### Future Enhancements
+- Full WebRTC video implementation
+
+- Mobile application
+
+- AI-powered symptom checker
+
+- Prescription management
+
+- Insurance integration
+
+- Multi-language support
+
+- Advanced analytics dashboard
+
+## 🤝 Contributing
+We welcome contributions from the community! Please see our Contributing Guidelines for details.
+
+## Development Setup
+- Fork the repository
+
+= Create a feature branch: git checkout -b feature/amazing-feature
+
+- Commit changes: git commit -m 'Add amazing feature'
+
+- Push to branch: git push origin feature/amazing-feature
+
+- Open a Pull Request
+
+## 📄 License
+This project is licensed under the MIT License.
+
