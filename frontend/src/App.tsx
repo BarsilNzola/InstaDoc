@@ -55,6 +55,7 @@ function App() {
     if (!isConnected || !address) {
       setLoading(false);
       setRole(null);
+      setIsPatientRegistered(false);
       return;
     }
 
@@ -65,17 +66,26 @@ function App() {
 
     setLoading(true);
 
-    if (hubAdmin !== undefined && isDoctor !== undefined && isRegisteredPatient !== undefined) {
-      if (address.toLowerCase() === (hubAdmin as string)?.toLowerCase()) {
-        setRole("admin");
-      } else if (isDoctor) {
-        setRole("doctor");
-      } else {
-        setRole("patient");
-        setIsPatientRegistered(!!isRegisteredPatient);
+    const detectRole = async () => {
+      try {
+        if (hubAdmin !== undefined && isDoctor !== undefined && isRegisteredPatient !== undefined) {
+          if (address.toLowerCase() === (hubAdmin as string)?.toLowerCase()) {
+            setRole("admin");
+          } else if (isDoctor) {
+            setRole("doctor");
+          } else {
+            setRole("patient");
+            setIsPatientRegistered(!!isRegisteredPatient);
+          }
+        }
+      } catch (error) {
+        console.error("Error detecting role:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
+    };
+
+    detectRole();
   }, [isConnected, address, chainId, hubAdmin, isDoctor, isRegisteredPatient, refreshTrigger]);
 
   // Patient registration
@@ -89,11 +99,17 @@ function App() {
     hash: txHash,
   });
 
-  // Refresh data when registration is confirmed
+  // Refresh data when registration is confirmed - FIXED: Now properly triggers re-render
   useEffect(() => {
     if (isConfirmed) {
       console.log("Registration confirmed, refreshing data...");
+      // Force a complete refresh by incrementing the trigger
       setRefreshTrigger(prev => prev + 1);
+      
+      // Also force re-check patient registration status
+      setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 2000);
     }
   }, [isConfirmed]);
 
@@ -199,12 +215,17 @@ function App() {
               </div>
               
               {isConfirmed ? (
-                <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f0f9f0', border: '1px solid #86efac', color: '#166534' }}>
-                  <div className="flex items-center justify-center space-x-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="font-medium">✅ Successfully registered! Loading dashboard...</span>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f0f9f0', border: '1px solid #86efac', color: '#166534' }}>
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">✅ Successfully registered! Loading dashboard...</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#f4991a' }}></div>
                   </div>
                 </div>
               ) : (

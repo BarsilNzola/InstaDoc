@@ -21,6 +21,7 @@ interface DoctorNotificationsProps {
 export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: DoctorNotificationsProps) {
   const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmedAppointmentId, setConfirmedAppointmentId] = useState<number | null>(null);
   const { address } = useAccount();
   
   const hubAddress = import.meta.env.VITE_HUB_ADDRESS as `0x${string}`;
@@ -49,7 +50,7 @@ export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: D
     hash: txHash,
   });
 
-  // Fetch PENDING appointments - ADD refreshTrigger TO DEPENDENCIES
+  // Fetch PENDING appointments
   useEffect(() => {
     const fetchAppointments = async () => {
       if (!address || !nextAppointmentId || !escrowAddress) {
@@ -91,7 +92,7 @@ export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: D
     };
 
     fetchAppointments();
-  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]); // refreshTrigger
+  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]);
 
   const getAppointmentDetails = async (appointmentId: number): Promise<any> => {
     if (!escrowAddress) {
@@ -107,7 +108,6 @@ export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: D
         args: [BigInt(appointmentId)],
       });
 
-      // The contract returns a tuple: [patient, doctor, amount, status]
       const [patient, doctor, amount, status] = appointment as [`0x${string}`, `0x${string}`, bigint, number];
       
       return {
@@ -129,6 +129,8 @@ export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: D
       return;
     }
 
+    setConfirmedAppointmentId(appointmentId);
+
     try {
       confirmAppointment({
         address: escrowAddress as `0x${string}`,
@@ -142,24 +144,34 @@ export default function DoctorNotifications({ refreshTrigger = 0, onRefresh }: D
         onError: (error) => {
           console.error("Appointment confirmation failed:", error);
           alert(`❌ Failed to confirm appointment: ${error.message}`);
+          setConfirmedAppointmentId(null);
         },
       });
     } catch (err: any) {
       console.error("Error confirming appointment:", err);
       alert(`Failed to confirm appointment: ${err.message}`);
+      setConfirmedAppointmentId(null);
     }
   };
 
-  // Remove confirmed appointment after confirmation AND TRIGGER REFRESH
+  // Handle confirmed appointment - FIXED: No more constant loop
   useEffect(() => {
-    if (isConfirmed) {
+    if (isConfirmed && confirmedAppointmentId !== null) {
+      console.log("Appointment confirmed, removing from list:", confirmedAppointmentId);
+      
+      // Remove the specific appointment that was confirmed
+      setPendingAppointments(prev => prev.filter(apt => apt.id !== confirmedAppointmentId));
+      
+      // Show success message
       alert("✅ Appointment confirmed! It will now appear in Video Consultations.");
-      // Remove the confirmed appointment from the list
-      setPendingAppointments(prev => prev.filter(apt => apt.id !== Number(txHash)));
+      
       // Trigger parent refresh to update other components
       onRefresh?.();
+      
+      // Reset the tracking
+      setConfirmedAppointmentId(null);
     }
-  }, [isConfirmed, txHash, onRefresh]);
+  }, [isConfirmed, confirmedAppointmentId, onRefresh]);
 
   const getStatusText = (status: number) => {
     switch (status) {
