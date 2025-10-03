@@ -23,6 +23,7 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
   const [activeConsultations, setActiveConsultations] = useState<Consultation[]>([]);
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completedAppointmentId, setCompletedAppointmentId] = useState<number | null>(null);
   const { address } = useAccount();
   
   const hubAddress = import.meta.env.VITE_HUB_ADDRESS as `0x${string}`;
@@ -51,7 +52,7 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
     hash: txHash,
   });
 
-  // Fetch CONFIRMED appointments for video consultation - ADD refreshTrigger TO DEPENDENCIES
+  // Fetch CONFIRMED appointments for video consultation
   useEffect(() => {
     const fetchConsultations = async () => {
       if (!address || !nextAppointmentId || !escrowAddress) {
@@ -70,7 +71,7 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
             // Show appointments that are CONFIRMED (status 1) for this doctor
             if (appointmentData && 
                 appointmentData.doctor.toLowerCase() === address.toLowerCase() && 
-                appointmentData.status === 1) { // 1 = Confirmed (was Completed/Accepted)
+                appointmentData.status === 1) {
               consultations.push({
                 id: i,
                 patient: appointmentData.patient,
@@ -93,7 +94,7 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
     };
 
     fetchConsultations();
-  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]); // ADDED refreshTrigger HERE
+  }, [address, nextAppointmentId, escrowAddress, refreshTrigger]);
 
   const getAppointmentDetails = async (appointmentId: number): Promise<any> => {
     if (!escrowAddress) {
@@ -109,7 +110,6 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
         args: [BigInt(appointmentId)],
       });
 
-      // The contract returns a tuple: [patient, doctor, amount, status]
       const [patient, doctor, amount, status] = appointment as [`0x${string}`, `0x${string}`, bigint, number];
       
       return {
@@ -131,6 +131,8 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
       return;
     }
 
+    setCompletedAppointmentId(appointmentId);
+
     try {
       completeAppointment({
         address: escrowAddress as `0x${string}`,
@@ -144,25 +146,39 @@ export default function DoctorVideoConsultation({ refreshTrigger = 0, onRefresh 
         onError: (error) => {
           console.error("Appointment completion failed:", error);
           alert(`❌ Failed to complete appointment: ${error.message}`);
+          setCompletedAppointmentId(null);
         },
       });
     } catch (err: any) {
       console.error("Error completing appointment:", err);
       alert(`Failed to complete appointment: ${err.message}`);
+      setCompletedAppointmentId(null);
     }
   };
 
-  // Remove completed appointment after confirmation AND TRIGGER REFRESH
+  // Handle completed appointment - FIXED: No more constant loop
   useEffect(() => {
-    if (isCompleted) {
+    if (isCompleted && completedAppointmentId !== null) {
+      console.log("Appointment completed, removing from list:", completedAppointmentId);
+      
+      // Remove the specific appointment that was completed
+      setActiveConsultations(prev => prev.filter(apt => apt.id !== completedAppointmentId));
+      
+      // Show success message
       alert("✅ Appointment completed! Payment has been released to you.");
-      // Remove the completed appointment from the list
-      setActiveConsultations(prev => prev.filter(apt => apt.id !== Number(txHash)));
-      setSelectedConsultation(null);
+      
+      // Close the video call if it's the selected consultation
+      if (selectedConsultation?.id === completedAppointmentId) {
+        setSelectedConsultation(null);
+      }
+      
       // Trigger parent refresh to update other components
       onRefresh?.();
+      
+      // Reset the tracking
+      setCompletedAppointmentId(null);
     }
-  }, [isCompleted, txHash, onRefresh]);
+  }, [isCompleted, completedAppointmentId, selectedConsultation, onRefresh]);
 
   const startVideoCall = (consultation: Consultation) => {
     setSelectedConsultation(consultation);

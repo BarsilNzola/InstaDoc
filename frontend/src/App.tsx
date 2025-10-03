@@ -11,6 +11,7 @@ function App() {
   const [isPatientRegistered, setIsPatientRegistered] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [registrationCompleted, setRegistrationCompleted] = useState(false);
   
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -19,7 +20,7 @@ function App() {
   const hubAbi = hubArtifact.abi;
 
   // Check if user is the admin of InstaDocHub
-  const { data: hubAdmin } = useReadContract({
+  const { data: hubAdmin, refetch: refetchHubAdmin } = useReadContract({
     address: hubAddress as `0x${string}`,
     abi: hubAbi,
     functionName: "admin",
@@ -29,7 +30,7 @@ function App() {
   });
 
   // Check if user is a verified doctor
-  const { data: isDoctor } = useReadContract({
+  const { data: isDoctor, refetch: refetchIsDoctor } = useReadContract({
     address: hubAddress as `0x${string}`,
     abi: hubAbi,
     functionName: "isDoctorVerified",
@@ -39,8 +40,8 @@ function App() {
     },
   });
 
-  // Check if patient is registered
-  const { data: isRegisteredPatient } = useReadContract({
+  // Check if patient is registered - ADD refetch function
+  const { data: isRegisteredPatient, refetch: refetchPatientStatus } = useReadContract({
     address: hubAddress as `0x${string}`,
     abi: hubAbi,
     functionName: "registeredPatients",
@@ -68,6 +69,13 @@ function App() {
 
     const detectRole = async () => {
       try {
+        // Force refetch all contract data
+        await Promise.all([
+          refetchHubAdmin?.(),
+          refetchIsDoctor?.(),
+          refetchPatientStatus?.()
+        ]);
+
         if (hubAdmin !== undefined && isDoctor !== undefined && isRegisteredPatient !== undefined) {
           if (address.toLowerCase() === (hubAdmin as string)?.toLowerCase()) {
             setRole("admin");
@@ -99,25 +107,42 @@ function App() {
     hash: txHash,
   });
 
-  // Refresh data when registration is confirmed - FIXED: Now properly triggers re-render
+  // Enhanced refresh for patient registration
   useEffect(() => {
-    if (isConfirmed) {
-      console.log("Registration confirmed, refreshing data...");
-      // Force a complete refresh by incrementing the trigger
+    if (isConfirmed && !registrationCompleted) {
+      console.log("Registration confirmed, forcing aggressive refresh...");
+      setRegistrationCompleted(true);
+      
+      // Force immediate refresh
       setRefreshTrigger(prev => prev + 1);
       
-      // Also force re-check patient registration status
+      // Force refetch of patient status specifically
       setTimeout(() => {
+        refetchPatientStatus?.();
         setRefreshTrigger(prev => prev + 1);
-      }, 2000);
+      }, 1000);
+      
+      // Additional refresh to ensure blockchain state is updated
+      setTimeout(() => {
+        refetchPatientStatus?.();
+        setRefreshTrigger(prev => prev + 1);
+      }, 3000);
+      
+      // Final refresh to be absolutely sure
+      setTimeout(() => {
+        refetchPatientStatus?.();
+        setRefreshTrigger(prev => prev + 1);
+      }, 5000);
     }
-  }, [isConfirmed]);
+  }, [isConfirmed, registrationCompleted, refetchPatientStatus]);
 
   const handlePatientRegistration = async () => {
     if (!hubAddress) {
       alert("Hub contract address not configured");
       return;
     }
+
+    setRegistrationCompleted(false);
 
     registerPatient({
       address: hubAddress as `0x${string}`,
@@ -130,16 +155,22 @@ function App() {
       onError: (error) => {
         console.error("Registration failed:", error);
         alert(`❌ Registration failed: ${error.message}`);
+        setRegistrationCompleted(false);
       },
     });
   };
 
-  if (loading) {
+  // Show loading state when registration is confirmed but still checking status
+  const showRegistrationLoading = isConfirmed && role === "patient" && !isPatientRegistered;
+
+  if (loading || showRegistrationLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9f5f0', color: '#344f1f' }}>
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#f4991a' }}></div>
-          <p className="text-lg font-medium">Detecting your role...</p>
+          <p className="text-lg font-medium">
+            {showRegistrationLoading ? "Finalizing registration..." : "Detecting your role..."}
+          </p>
         </div>
       </div>
     );
@@ -221,7 +252,7 @@ function App() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="font-medium">✅ Successfully registered! Loading dashboard...</span>
+                      <span className="font-medium">✅ Successfully registered! Finalizing...</span>
                     </div>
                   </div>
                   <div className="flex justify-center">
